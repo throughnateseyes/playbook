@@ -1,3 +1,5 @@
+// ── SOP-related types ──────────────────────────────────
+
 export interface EdgeCase {
   title: string;
   description: string;
@@ -48,4 +50,24 @@ export interface SOP {
   escalation: Escalation;
   contacts: Contact[];
   referenceMaterials: ReferenceMaterial[];
+}
+
+// ── Workspace / User types (Supabase-ready) ────────────
+
+export interface Workspace {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+}
+
+export type UserRole = "admin" | "member";
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  workspaceId: string;
+  avatarUrl?: string;
 }

@@ -2,12 +2,13 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SOP } from '../types';
+import { normalizeSOPs, normalizeSOP } from '../lib/normalize';
 import Sidebar from '../components/Sidebar';
 import CommandPalette from '../components/CommandPalette';
 import SopDetail from '../components/SopDetail';
 import { UserMenu } from '../components/UserMenu';
 
-const INITIAL_SOPS: SOP[] = [
+const INITIAL_SOPS: SOP[] = normalizeSOPs([
   {
     id: '1',
     title: 'Emergency Maintenance Request',
@@ -223,7 +224,7 @@ const INITIAL_SOPS: SOP[] = [
       { title: 'Transfer policy', fileUrl: '/files/transfer-policy.pdf' },
     ],
   },
-];
+]);
 
 
 const CATEGORIES = ['Operations', 'Resident Support', 'Finance', 'Leasing'];
@@ -543,7 +544,7 @@ export default function Home() {
     }
 
     if (isEditMode && editingSOP) {
-      const updatedSOP: SOP = {
+      const updatedSOP = normalizeSOP({
         ...editingSOP,
         title: formData.title,
         category: formData.category,
@@ -557,7 +558,7 @@ export default function Home() {
           contact: formData.escalationContact,
         },
         contacts: formData.contacts.filter(c => c.name.trim()),
-      };
+      });
 
       setSops(sops.map(sop => sop.id === editingSOP.id ? updatedSOP : sop));
       setSelectedSOP(updatedSOP);
@@ -566,7 +567,7 @@ export default function Home() {
       setEditingSOP(null);
       resetForm();
     } else {
-      const newSOP: SOP = {
+      const newSOP = normalizeSOP({
         id: String(Date.now()),
         title: formData.title,
         category: formData.category,
@@ -581,7 +582,7 @@ export default function Home() {
         },
         contacts: formData.contacts.filter(c => c.name.trim()),
         referenceMaterials: [],
-      };
+      });
 
       setSops([...sops, newSOP]);
       setSelectedSOP(newSOP);

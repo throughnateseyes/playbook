@@ -22,6 +22,7 @@ const CATEGORY_VIEW_ITEMS = [
 // ─── Tag helpers ──────────────────────────────────────────────────────────────
 
 function getFrequencyPill(tags: string[]): string | null {
+  if (!Array.isArray(tags)) return null;
   if (tags.some(t => ["Daily", "Daily Workflow"].includes(t))) return "Daily";
   if (tags.some(t => ["Weekly", "Onboarding", "Inspection"].includes(t))) return "Weekly";
   if (tags.some(t => ["Rare"].includes(t))) return "Rare";
