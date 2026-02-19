@@ -17,6 +17,7 @@
   --accent:             #2563eb;
   --accent-foreground:  #ffffff;
   --ring:               #3b82f6;
+  --pin:                #fbbf24;
   --highlight:          #fef08a;
   --highlight-text:     #171717;
 }
@@ -38,6 +39,7 @@
   --accent:             #3b82f6;
   --accent-foreground:  #ffffff;
   --ring:               #60a5fa;
+  --pin:                #fbbf24;
   --highlight:          rgba(59, 130, 246, 0.25);
   --highlight-text:     #93c5fd;
 }
@@ -59,6 +61,7 @@
   --color-accent:             var(--accent);
   --color-accent-foreground:  var(--accent-foreground);
   --color-ring:               var(--ring);
+  --color-pin:                var(--pin);
   --color-highlight:          var(--highlight);
   --color-highlight-text:     var(--highlight-text);
   --font-sans: var(--font-geist-sans);

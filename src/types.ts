@@ -13,6 +13,8 @@ export interface Contact {
   name: string;
   team: string;
   reason: string;
+  teamsUrl?: string;
+  linkedinUrl?: string;
 }
 
 export interface StepAttachment {
@@ -28,6 +30,12 @@ export interface Step {
   attachments?: StepAttachment[];
 }
 
+export interface ReferenceMaterial {
+  title: string;
+  fileUrl: string;
+  thumbnailUrl?: string;
+}
+
 export interface SOP {
   id: string;
   title: string;
@@ -39,5 +47,5 @@ export interface SOP {
   edgeCases: EdgeCase[];
   escalation: Escalation;
   contacts: Contact[];
-  photos: string[];
+  referenceMaterials: ReferenceMaterial[];
 }

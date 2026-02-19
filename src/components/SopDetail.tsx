@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, startTransition } from "react";
-import { ChevronDown, Star, Copy, Check, FileText, Image } from "lucide-react";
-import type { SOP, Step, StepAttachment } from "../types";
+import React, { useState, useCallback, useEffect, useMemo, startTransition } from "react";
+import { ChevronDown, Star, Copy, Check, FileText, Image, AlertTriangle, User, ExternalLink, Download } from "lucide-react";
+import type { SOP, Step, StepAttachment, EdgeCase } from "../types";
 
 // ─── SectionLabel ─────────────────────────────────────────────────────────────
 
@@ -110,7 +110,7 @@ const StepRow = React.memo(function StepRow({
         type="button"
         onClick={handleToggle}
         className={[
-          "w-full grid grid-cols-[28px_1fr_16px] gap-3 items-start py-4 text-left group",
+          "w-full grid grid-cols-[28px_1fr_16px] gap-3 items-start py-5 text-left group",
           hasContent ? "cursor-pointer" : "cursor-default",
         ].join(" ")}
         aria-expanded={hasContent ? open : undefined}
@@ -153,6 +153,57 @@ const StepRow = React.memo(function StepRow({
   );
 });
 
+// ─── EdgeCaseCard ─────────────────────────────────────────────────────────────
+
+interface EdgeCaseCardProps {
+  edgeCase: EdgeCase;
+  isExpanded: boolean;
+  onToggle: () => void;
+  highlightText: (text: string) => React.ReactNode;
+}
+
+const EdgeCaseCard = React.memo(function EdgeCaseCard({
+  edgeCase,
+  isExpanded,
+  onToggle,
+  highlightText,
+}: EdgeCaseCardProps) {
+  return (
+    <div className="border border-border-muted rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-start gap-3 px-4 py-3.5 text-left group"
+        aria-expanded={isExpanded}
+      >
+        <AlertTriangle
+          size={14}
+          strokeWidth={1.75}
+          className="flex-shrink-0 text-text-faint mt-[2px]"
+        />
+        <span className="flex-1 min-w-0 ty-list-title truncate">
+          {highlightText(edgeCase.title)}
+        </span>
+        <ChevronDown
+          size={14}
+          strokeWidth={2}
+          className={[
+            "flex-shrink-0 text-text-faint group-hover:text-text-muted transition-transform duration-200 ease-out mt-[2px]",
+            isExpanded ? "rotate-180" : "",
+          ].join(" ")}
+        />
+      </button>
+      {isExpanded && (
+        <div className="px-4 pb-3.5 pl-[43px]">
+          <p className="ty-secondary">
+            {highlightText(edgeCase.description)}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+});
+
 // ─── SopDetail ────────────────────────────────────────────────────────────────
 
 export interface SopDetailProps {
@@ -170,6 +221,21 @@ const SopDetail = React.memo(function SopDetail({
   isPinned,
   onTogglePin,
 }: SopDetailProps) {
+  const [expandedEdgeCases, setExpandedEdgeCases] = useState<Set<number>>(new Set());
+
+  const toggleEdgeCase = useCallback((index: number) => {
+    setExpandedEdgeCases((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    setExpandedEdgeCases(new Set());
+  }, [sop.id]);
+
   return (
     <div className="pb-4">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
@@ -189,7 +255,7 @@ const SopDetail = React.memo(function SopDetail({
                 size={14}
                 strokeWidth={isPinned ? 0 : 1.75}
                 fill={isPinned ? "currentColor" : "none"}
-                className={isPinned ? "text-amber-400" : ""}
+                className={isPinned ? "text-pin" : ""}
               />
             </button>
             <button
@@ -236,61 +302,86 @@ const SopDetail = React.memo(function SopDetail({
         </section>
       )}
 
-      {/* ── Edge Cases ─────────────────────────────────────────────────────── */}
-      {sop.edgeCases.length > 0 && (
+      {/* ── Edge Cases + Escalation — 2-column layout ────────────────── */}
+      {(sop.edgeCases.length > 0 || sop.escalation.when || sop.escalation.contact) && (
         <section className="border-t border-border-muted pt-6 pb-8">
-          <SectionLabel>Edge Cases</SectionLabel>
-          <div className="space-y-6">
-            {sop.edgeCases.map((ec, i) => (
-              <div key={i}>
-                <p className="ty-list-title mb-1.5">
-                  {highlightText(ec.title)}
-                </p>
-                <p className="ty-secondary">
-                  {highlightText(ec.description)}
-                </p>
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8">
+            {/* ── Left column: Edge Cases ─────────────────────────────────── */}
+            {sop.edgeCases.length > 0 && (
+              <div>
+                <SectionLabel>Edge Cases</SectionLabel>
+                <div className="space-y-3">
+                  {sop.edgeCases.map((ec, i) => (
+                    <EdgeCaseCard
+                      key={i}
+                      edgeCase={ec}
+                      isExpanded={expandedEdgeCases.has(i)}
+                      onToggle={() => toggleEdgeCase(i)}
+                      highlightText={highlightText}
+                    />
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
+
+            {/* ── Right column: Escalation ────────────────────────────────── */}
+            {(sop.escalation.when || sop.escalation.contact) && (
+              <div>
+                <SectionLabel>Escalation</SectionLabel>
+                <div className="rounded-lg border border-border-muted overflow-hidden">
+                  {sop.escalation.when && (
+                    <div className={[
+                      "flex items-start gap-3 px-4 py-3",
+                      sop.escalation.contact ? "border-b border-border-muted" : "",
+                    ].join(" ")}>
+                      <AlertTriangle
+                        size={13}
+                        strokeWidth={1.75}
+                        className="flex-shrink-0 text-text-faint mt-[3px]"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="ty-section-label mb-1">When</p>
+                        <p className="ty-secondary">
+                          {highlightText(sop.escalation.when)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {sop.escalation.contact && (
+                    <div className="flex items-start gap-3 px-4 py-3">
+                      <User
+                        size={13}
+                        strokeWidth={1.75}
+                        className="flex-shrink-0 text-text-faint mt-[3px]"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="ty-section-label mb-1">Who</p>
+                        <p className="ty-secondary">
+                          {highlightText(sop.escalation.contact)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
 
-      {/* ── Escalation ─────────────────────────────────────────────────────── */}
-      {(sop.escalation.when || sop.escalation.contact) && (
-        <section className="border-t border-border-muted pt-6 pb-8">
-          <SectionLabel>Escalation</SectionLabel>
-          <div className="space-y-5">
-            {sop.escalation.when && (
-              <div>
-                <p className="ty-section-label mb-1.5">
-                  When
-                </p>
-                <p className="ty-body">
-                  {highlightText(sop.escalation.when)}
-                </p>
-              </div>
-            )}
-            {sop.escalation.contact && (
-              <div>
-                <p className="ty-section-label mb-1.5">
-                  Contact
-                </p>
-                <p className="ty-body">
-                  {highlightText(sop.escalation.contact)}
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* ── Contacts ───────────────────────────────────────────────────────── */}
+      {/* ── Contacts ─────────────────────────────────────────────────────── */}
       {sop.contacts.length > 0 && (
         <section className="border-t border-border-muted pt-6 pb-8">
           <SectionLabel>Contacts</SectionLabel>
-          <div className="divide-y divide-border-muted">
+          <div className="rounded-xl border border-border bg-surface overflow-hidden">
             {sop.contacts.map((c, i) => (
-              <div key={i} className="flex items-start gap-4 py-3 first:pt-0 last:pb-0">
+              <div
+                key={i}
+                className={[
+                  "flex items-start gap-4 px-4 py-3.5",
+                  i < sop.contacts.length - 1 ? "border-b border-border-muted" : "",
+                ].join(" ")}
+              >
                 <span className="flex-shrink-0 w-8 h-8 rounded-full bg-surface-2 text-text-muted text-[11px] font-semibold flex items-center justify-center">
                   {c.name
                     .split(" ")
@@ -312,6 +403,32 @@ const SopDetail = React.memo(function SopDetail({
                   <p className="ty-secondary">
                     {highlightText(c.reason)}
                   </p>
+                  {(c.teamsUrl || c.linkedinUrl) && (
+                    <div className="flex items-center gap-2 mt-2">
+                      {c.teamsUrl && (
+                        <a
+                          href={c.teamsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-text-muted border border-border-muted rounded-md hover:bg-surface-2 hover:text-foreground transition-colors duration-150"
+                        >
+                          Teams
+                          <ExternalLink size={10} strokeWidth={2} />
+                        </a>
+                      )}
+                      {c.linkedinUrl && (
+                        <a
+                          href={c.linkedinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-text-muted border border-border-muted rounded-md hover:bg-surface-2 hover:text-foreground transition-colors duration-150"
+                        >
+                          LinkedIn
+                          <ExternalLink size={10} strokeWidth={2} />
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -320,19 +437,36 @@ const SopDetail = React.memo(function SopDetail({
       )}
 
       {/* ── Reference Materials ────────────────────────────────────────────── */}
-      {sop.photos.length > 0 && (
+      {sop.referenceMaterials.length > 0 && (
         <section className="border-t border-border-muted pt-6 pb-8">
           <SectionLabel>Reference Materials</SectionLabel>
-          <div className="grid grid-cols-3 gap-3">
-            {sop.photos.map((photo, i) => (
-              <div
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {sop.referenceMaterials.map((ref, i) => (
+              <a
                 key={i}
-                className="aspect-video bg-surface rounded-lg border border-border flex items-center justify-center p-4 text-center hover:bg-surface-2/80 transition-colors cursor-pointer"
+                href={ref.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col rounded-lg border border-border bg-surface overflow-hidden hover:border-border-strong hover:shadow-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <span className="ty-secondary font-medium">
-                  {highlightText(photo)}
-                </span>
-              </div>
+                <div className="aspect-video bg-surface-2 flex items-center justify-center">
+                  {ref.thumbnailUrl ? (
+                    <img src={ref.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <FileText size={24} strokeWidth={1.25} className="text-text-faint" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground truncate">
+                    {highlightText(ref.title)}
+                  </span>
+                  <Download
+                    size={13}
+                    strokeWidth={1.75}
+                    className="flex-shrink-0 text-text-faint group-hover:text-text-muted transition-colors"
+                  />
+                </div>
+              </a>
             ))}
           </div>
         </section>

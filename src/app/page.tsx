@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { SOP, Contact } from '../types';
+import type { SOP } from '../types';
 import Sidebar from '../components/Sidebar';
 import CommandPalette from '../components/CommandPalette';
 import SopDetail from '../components/SopDetail';
@@ -42,10 +42,14 @@ const INITIAL_SOPS: SOP[] = [
       contact: 'Regional Manager (555-0100)',
     },
     contacts: [
-      { label: 'Maintenance Lead', name: 'Mike Chen', team: 'Operations', reason: 'After-hours emergency coordination' },
-      { label: 'Property Manager', name: 'Sarah Johnson', team: 'Management', reason: 'Budget approval over $500' },
+      { label: 'Maintenance Lead', name: 'Mike Chen', team: 'Operations', reason: 'After-hours emergency coordination', teamsUrl: 'https://teams.microsoft.com/l/chat/0/0?users=mike.chen@parkmerced.com', linkedinUrl: 'https://linkedin.com/in/mikechen' },
+      { label: 'Property Manager', name: 'Sarah Johnson', team: 'Management', reason: 'Budget approval over $500', linkedinUrl: 'https://linkedin.com/in/sarahjohnson' },
     ],
-    photos: ['Emergency contact list', 'Maintenance log template', 'Safety checklist'],
+    referenceMaterials: [
+      { title: 'Emergency contact list', fileUrl: '/files/emergency-contacts.pdf' },
+      { title: 'Maintenance log template', fileUrl: '/files/maintenance-log.xlsx' },
+      { title: 'Safety checklist', fileUrl: '/files/safety-checklist.pdf' },
+    ],
   },
   {
     id: '2',
@@ -75,7 +79,11 @@ const INITIAL_SOPS: SOP[] = [
       { label: 'Leasing Manager', name: 'Tom Rodriguez', team: 'Leasing', reason: 'Move-in disputes and concessions' },
       { label: 'Legal Counsel', name: 'Jennifer Park', team: 'Legal', reason: 'Lease agreement modifications' },
     ],
-    photos: ['Move-in checklist', 'Unit inspection form', 'Welcome packet contents'],
+    referenceMaterials: [
+      { title: 'Move-in checklist', fileUrl: '/files/move-in-checklist.pdf' },
+      { title: 'Unit inspection form', fileUrl: '/files/unit-inspection.pdf' },
+      { title: 'Welcome packet contents', fileUrl: '/files/welcome-packet.pdf' },
+    ],
   },
   {
     id: '3',
@@ -102,10 +110,14 @@ const INITIAL_SOPS: SOP[] = [
       contact: 'Finance Manager (555-0102)',
     },
     contacts: [
-      { label: 'Finance Manager', name: 'David Kim', team: 'Finance', reason: 'Fee waiver approvals' },
+      { label: 'Finance Manager', name: 'David Kim', team: 'Finance', reason: 'Fee waiver approvals', teamsUrl: 'https://teams.microsoft.com/l/chat/0/0?users=david.kim@parkmerced.com' },
       { label: 'Collections Specialist', name: 'Maria Gonzalez', team: 'Finance', reason: 'Payment plans and late accounts' },
     ],
-    photos: ['Late fee schedule', 'Notice template', 'Payment policy'],
+    referenceMaterials: [
+      { title: 'Late fee schedule', fileUrl: '/files/late-fee-schedule.pdf' },
+      { title: 'Notice template', fileUrl: '/files/notice-template.docx' },
+      { title: 'Payment policy', fileUrl: '/files/payment-policy.pdf' },
+    ],
   },
   {
     id: '4',
@@ -135,7 +147,11 @@ const INITIAL_SOPS: SOP[] = [
       { label: 'Property Manager', name: 'Alex Turner', team: 'Management', reason: 'Resident conflicts and warnings' },
       { label: 'Security Coordinator', name: 'James Wilson', team: 'Operations', reason: 'Safety concerns and disturbances' },
     ],
-    photos: ['Quiet hours policy', 'Warning notice template', 'Complaint log'],
+    referenceMaterials: [
+      { title: 'Quiet hours policy', fileUrl: '/files/quiet-hours-policy.pdf' },
+      { title: 'Warning notice template', fileUrl: '/files/warning-notice.docx' },
+      { title: 'Complaint log', fileUrl: '/files/complaint-log.xlsx' },
+    ],
   },
   {
     id: '5',
@@ -165,7 +181,11 @@ const INITIAL_SOPS: SOP[] = [
       { label: 'Office Manager', name: 'Lisa Brown', team: 'Operations', reason: 'Package system issues' },
       { label: 'IT Support', name: 'Kevin Patel', team: 'Technology', reason: 'Tracking system failures' },
     ],
-    photos: ['Package room layout', 'Tracking system screenshot', 'Notification template'],
+    referenceMaterials: [
+      { title: 'Package room layout', fileUrl: '/files/package-room-layout.png', thumbnailUrl: '/thumbnails/package-room.jpg' },
+      { title: 'Tracking system screenshot', fileUrl: '/files/tracking-system.png', thumbnailUrl: '/thumbnails/tracking-system.jpg' },
+      { title: 'Notification template', fileUrl: '/files/notification-template.docx' },
+    ],
   },
   {
     id: '6',
@@ -193,11 +213,15 @@ const INITIAL_SOPS: SOP[] = [
       contact: 'Leasing Manager (555-0101)',
     },
     contacts: [
-      { label: 'Leasing Manager', name: 'Tom Rodriguez', team: 'Leasing', reason: 'Rate negotiations and retention' },
+      { label: 'Leasing Manager', name: 'Tom Rodriguez', team: 'Leasing', reason: 'Rate negotiations and retention', teamsUrl: 'https://teams.microsoft.com/l/chat/0/0?users=tom.rodriguez@parkmerced.com', linkedinUrl: 'https://linkedin.com/in/tomrodriguez' },
       { label: 'Revenue Manager', name: 'Rachel Lee', team: 'Finance', reason: 'Pricing and market rate approvals' },
       { label: 'Transfer Coordinator', name: 'Brandon Smith', team: 'Leasing', reason: 'Unit transfer arrangements' },
     ],
-    photos: ['Renewal timeline', 'Incentive options', 'Transfer policy'],
+    referenceMaterials: [
+      { title: 'Renewal timeline', fileUrl: '/files/renewal-timeline.pdf' },
+      { title: 'Incentive options', fileUrl: '/files/incentive-options.pdf' },
+      { title: 'Transfer policy', fileUrl: '/files/transfer-policy.pdf' },
+    ],
   },
 ];
 
@@ -556,7 +580,7 @@ export default function Home() {
           contact: formData.escalationContact,
         },
         contacts: formData.contacts.filter(c => c.name.trim()),
-        photos: [],
+        referenceMaterials: [],
       };
 
       setSops([...sops, newSOP]);
@@ -618,7 +642,7 @@ export default function Home() {
     setFormData({ ...formData, contacts: formData.contacts.filter((_, i) => i !== index) });
   };
 
-  const updateContact = (index: number, field: keyof Contact, value: string) => {
+  const updateContact = (index: number, field: 'label' | 'name' | 'team' | 'reason', value: string) => {
     const newContacts = [...formData.contacts];
     newContacts[index][field] = value;
     setFormData({ ...formData, contacts: newContacts });

@@ -92,7 +92,7 @@ const SopListItem = React.memo(function SopListItem({
         className={[
           "absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded transition-all duration-150",
           isPinned
-            ? "text-amber-400 opacity-100"
+            ? "text-pin opacity-100"
             : "text-text-faint opacity-0 group-hover:opacity-100 hover:text-text-muted",
         ].join(" ")}
         onClick={(e) => { e.stopPropagation(); onTogglePin(); }}
@@ -279,7 +279,7 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
               {(activeView !== "all" || searchQuery.trim()) && (
                 <button
                   onClick={clearFilter}
-                  className="text-[11px] text-text-faint hover:text-foreground transition-colors duration-150"
+                  className="text-[11px] text-text-faint hover:text-accent transition-colors duration-150"
                 >
                   Clear
                 </button>
