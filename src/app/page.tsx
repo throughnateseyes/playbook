@@ -5,7 +5,8 @@ import type { SOP, Contact } from '../types';
 import Sidebar from '../components/Sidebar';
 import CommandPalette from '../components/CommandPalette';
 import SopDetail from '../components/SopDetail';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { WorkspaceSwitcher } from '../components/WorkspaceSwitcher';
+import { UserMenu } from '../components/UserMenu';
 
 const INITIAL_SOPS: SOP[] = [
   {
@@ -633,12 +634,22 @@ export default function Home() {
         searchQuery={searchQuery}
         pinnedIds={pinnedIds}
         onTogglePin={togglePin}
+        onAddSOP={() => {
+          setIsEditMode(false);
+          setEditingSOP(null);
+          resetForm();
+          setShowAddPanel(true);
+        }}
       />
 
       <div className="flex-1 flex flex-col">
-        <div className="bg-background border-b border-border px-6 py-3 flex items-center h-16">
-          <div className="flex-1 max-w-md">
-            <div className="relative">
+        <div className="bg-background border-b border-border px-4 flex items-center h-14">
+          {/* Left — workspace switcher */}
+          <WorkspaceSwitcher />
+
+          {/* Center — search */}
+          <div className="flex-1 flex items-center justify-center px-4">
+            <div className="relative w-full max-w-md">
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-text-faint"
                 width="16"
@@ -652,12 +663,12 @@ export default function Home() {
 
               <input
                 type="text"
-                placeholder="What do you need help with?"
+                placeholder="Search..."
                 value={searchQuery}
                 readOnly
                 onClick={() => setCommandPaletteOpen(true)}
                 onKeyDown={handleSearchKeyDown}
-                className="w-full pl-10 pr-24 py-2 bg-surface border border-border-strong rounded-xl text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow cursor-pointer select-none"
+                className="w-full pl-10 pr-16 py-1.5 bg-surface border border-border rounded-lg text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow cursor-pointer select-none"
               />
 
               {/* ⌘K hint — only when no active search and no match counter */}
@@ -727,23 +738,8 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="ml-auto flex items-center gap-3">
-            <button
-              onClick={() => {
-                setIsEditMode(false);
-                setEditingSOP(null);
-                resetForm();
-                setShowAddPanel(true);
-              }}
-              className="px-4 py-2 text-text-secondary text-sm font-medium rounded-lg hover:bg-surface-2 hover:shadow-sm active:bg-surface-3 transition-all duration-150 flex items-center gap-2"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-              Add SOP
-            </button>
-            <ThemeToggle />
-          </div>
+          {/* Right — user menu (theme toggle lives inside the dropdown) */}
+          <UserMenu />
         </div>
 
         <div ref={detailContainerRef} className="flex-1 overflow-y-auto">

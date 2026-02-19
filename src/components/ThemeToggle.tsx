@@ -11,7 +11,7 @@ export function ThemeToggle() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
-    return <div className="w-[18px] h-[18px]" />;
+    return <div className="w-8 h-8 rounded-lg" />;
   }
 
   const isDark = resolvedTheme === "dark";
@@ -21,9 +21,9 @@ export function ThemeToggle() {
     <button
       aria-label="Toggle theme"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="text-text-faint hover:text-foreground hover:drop-shadow-sm hover:scale-[1.03] transition-all duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+      className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-foreground hover:bg-surface-2 active:bg-surface-3 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <Icon size={18} strokeWidth={1.75} />
+      <Icon size={16} strokeWidth={1.75} />
     </button>
   );
 }

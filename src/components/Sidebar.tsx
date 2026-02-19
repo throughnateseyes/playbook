@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Menu, Home, LayoutList, Star, Wrench, Headset, Receipt, KeyRound } from "lucide-react";
+import { Menu, Home, LayoutList, Star, Wrench, Headset, Receipt, KeyRound, Plus } from "lucide-react";
 import type { SOP } from "../types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -121,9 +121,13 @@ interface SidebarProps {
   searchQuery: string;
   pinnedIds: Set<string>;
   onTogglePin: (id: string) => void;
+  onAddSOP: () => void;
 }
 
-const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, pinnedIds, onTogglePin }: SidebarProps) {
+const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, pinnedIds, onTogglePin, onAddSOP }: SidebarProps) {
+  // TODO: replace with real role check when auth is added
+  const canCreateSop = true;
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeView, setActiveView] = useState<string>("all");
   const [hasMounted, setHasMounted] = useState(false);
@@ -165,7 +169,7 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
     return (
       <div className="w-[268px] bg-background border-r border-border-muted flex flex-col flex-shrink-0 transition-all duration-200 ease-out">
         {/* Header */}
-        <div className="h-16 flex items-center px-4 border-b border-border-muted flex-shrink-0">
+        <div className="h-14 flex items-center px-4 border-b border-border flex-shrink-0">
           <span className="flex-1 text-[15px] font-semibold text-foreground tracking-tight">Playbook</span>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -247,6 +251,16 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
 
           {/* SOP list */}
           <div className="px-3 pb-4 pt-1">
+            {/* TODO: hide when canCreateSop is false (role-based) */}
+            {canCreateSop && (
+              <button
+                onClick={onAddSOP}
+                className="w-full flex items-center gap-2 px-2 py-1.5 mb-1.5 rounded-lg text-[13px] font-medium text-text-secondary hover:bg-surface-2 active:bg-surface-3 transition-all duration-150"
+              >
+                <Plus size={14} strokeWidth={2} className="text-text-faint" />
+                Add SOP
+              </button>
+            )}
             {activeView === "home" ? (
               <div className="py-8 text-center">
                 <p className="text-sm text-text-muted">Pick a view or search to get started</p>
@@ -284,7 +298,7 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
   return (
     <div className="w-[72px] bg-background border-r border-border-muted flex flex-col flex-shrink-0 transition-all duration-200 ease-out">
       {/* Header */}
-      <div className="h-16 flex items-center justify-center border-b border-border-muted flex-shrink-0">
+      <div className="h-14 flex items-center justify-center border-b border-border flex-shrink-0">
         <button
           onClick={() => setSidebarOpen(true)}
           className="p-2 text-text-muted hover:text-foreground hover:bg-surface-2 hover:shadow-sm active:bg-surface-3 rounded-md transition-all duration-150"
