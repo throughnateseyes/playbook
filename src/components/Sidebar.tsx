@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Menu, Home, LayoutList, Star, Wrench, Headset, Receipt, KeyRound, Plus } from "lucide-react";
+import { Menu, Home, Star, Wrench, Headset, Receipt, KeyRound } from "lucide-react";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import type { SOP } from "../types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const VIEW_ITEMS = [
-  { id: "home",   label: "Home",     icon: Home },
-  { id: "all",    label: "All SOPs", icon: LayoutList },
-  { id: "pinned", label: "Pinned",   icon: Star },
+  { id: "home",   label: "Home",   icon: Home },
+  { id: "pinned", label: "Pinned", icon: Star },
 ] as const;
 
 const CATEGORY_VIEW_ITEMS = [
@@ -20,12 +20,6 @@ const CATEGORY_VIEW_ITEMS = [
 ] as const;
 
 // ─── Tag helpers ──────────────────────────────────────────────────────────────
-
-function getUrgencyPill(tags: string[]): string | null {
-  if (tags.some(t => ["Urgent", "After-Hours", "Emergency", "Critical"].includes(t))) return "Urgent";
-  if (tags.some(t => ["Standard", "Policy", "Routine"].includes(t))) return "Standard";
-  return null;
-}
 
 function getFrequencyPill(tags: string[]): string | null {
   if (tags.some(t => ["Daily", "Daily Workflow"].includes(t))) return "Daily";
@@ -40,6 +34,7 @@ interface SopListItemProps {
   sop: SOP;
   isSelected: boolean;
   isPinned: boolean;
+  showCategory: boolean;
   onSelect: () => void;
   onTogglePin: () => void;
 }
@@ -48,11 +43,12 @@ const SopListItem = React.memo(function SopListItem({
   sop,
   isSelected,
   isPinned,
+  showCategory,
   onSelect,
   onTogglePin,
 }: SopListItemProps) {
-  const urgencyPill = getUrgencyPill(sop.tags);
   const freqPill = getFrequencyPill(sop.tags);
+  const hasMeta = (showCategory && sop.category) || freqPill;
 
   return (
     <div
@@ -76,11 +72,11 @@ const SopListItem = React.memo(function SopListItem({
         >
           {sop.title}
         </div>
-        {(urgencyPill || freqPill) && (
+        {hasMeta && (
           <div className="flex items-center gap-1 mt-[3px]">
-            {urgencyPill && (
+            {showCategory && sop.category && (
               <span className="text-[11px] text-text-muted leading-none">
-                {urgencyPill}
+                {sop.category}
               </span>
             )}
             {freqPill && (
@@ -121,14 +117,11 @@ interface SidebarProps {
   searchQuery: string;
   pinnedIds: Set<string>;
   onTogglePin: (id: string) => void;
-  onAddSOP: () => void;
 }
 
-const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, pinnedIds, onTogglePin, onAddSOP }: SidebarProps) {
-  // TODO: replace with real role check when auth is added
-  const canCreateSop = true;
-
+const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, pinnedIds, onTogglePin }: SidebarProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  // "all" = no category filter (show everything); "pinned" = pinned view; "category:X" = filtered
   const [activeView, setActiveView] = useState<string>("all");
   const [hasMounted, setHasMounted] = useState(false);
   useEffect(() => setHasMounted(true), []);
@@ -137,6 +130,8 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
     setActiveView(id);
     setSidebarOpen(true);
   }, []);
+
+  const isCategorySelected = activeView.startsWith("category:");
 
   // Category counts (unaffected by search or active view)
   const categoryCounts = useMemo(() => {
@@ -150,9 +145,9 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
   const viewSOPs = useMemo(() => {
     if (activeView === "home") return [];
     let base: SOP[];
-    if (activeView === "all") base = sops;
-    else if (activeView === "pinned") base = sops.filter((s) => pinnedIds.has(s.id));
-    else base = sops.filter((s) => `category:${s.category}` === activeView);
+    if (activeView === "pinned") base = sops.filter((s) => pinnedIds.has(s.id));
+    else if (activeView.startsWith("category:")) base = sops.filter((s) => `category:${s.category}` === activeView);
+    else base = sops; // "all" — no filter
 
     if (!searchQuery.trim()) return base;
     const q = searchQuery.toLowerCase();
@@ -182,8 +177,13 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
 
         {/* Scroll body */}
         <div className="flex-1 overflow-y-auto">
+          {/* Workspace switcher */}
+          <div className="px-3 pt-3 pb-1">
+            <WorkspaceSwitcher />
+          </div>
+
           {/* Top views */}
-          <nav className="px-3 pt-3 pb-1">
+          <nav className="px-3 pt-1 pb-1">
             {VIEW_ITEMS.map(({ id, label, icon: Icon }) => {
               const isActive = activeView === id;
               const count = id === "pinned" && hasMounted && pinnedIds.size > 0 ? pinnedIds.size : undefined;
@@ -215,8 +215,15 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
           {/* Divider */}
           <div className="border-t border-border-muted mx-3 my-1" />
 
+          {/* Categories label */}
+          <div className="px-5 pt-2 pb-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-text-faint">
+              Categories
+            </span>
+          </div>
+
           {/* Category views */}
-          <nav className="px-3 pt-1 pb-2">
+          <nav className="px-3 pt-0.5 pb-2">
             {CATEGORY_VIEW_ITEMS.map(({ id, label, icon: Icon }) => {
               const isActive = activeView === id;
               const cat = label;
@@ -251,16 +258,6 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
 
           {/* SOP list */}
           <div className="px-3 pb-4 pt-1">
-            {/* TODO: hide when canCreateSop is false (role-based) */}
-            {canCreateSop && (
-              <button
-                onClick={onAddSOP}
-                className="w-full flex items-center gap-2 px-2 py-1.5 mb-1.5 rounded-lg text-[13px] font-medium text-text-secondary hover:bg-surface-2 active:bg-surface-3 transition-all duration-150"
-              >
-                <Plus size={14} strokeWidth={2} className="text-text-faint" />
-                Add SOP
-              </button>
-            )}
             {activeView === "home" ? (
               <div className="py-8 text-center">
                 <p className="text-sm text-text-muted">Pick a view or search to get started</p>
@@ -282,6 +279,7 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
                     sop={sop}
                     isSelected={selectedSOP?.id === sop.id}
                     isPinned={pinnedIds.has(sop.id)}
+                    showCategory={!isCategorySelected}
                     onSelect={() => onSelectSOP(sop)}
                     onTogglePin={() => onTogglePin(sop.id)}
                   />
@@ -310,6 +308,12 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
 
       {/* Icon rail */}
       <div className="flex-1 flex flex-col items-center pt-3 pb-4 gap-0.5">
+        {/* Workspace icon */}
+        <WorkspaceSwitcher collapsed />
+
+        {/* Divider */}
+        <div className="w-5 border-t border-border-muted my-1" />
+
         {VIEW_ITEMS.map(({ id, label, icon: Icon }) => {
           const isActive = activeView === id;
           return (

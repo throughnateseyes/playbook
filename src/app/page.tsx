@@ -5,7 +5,6 @@ import type { SOP, Contact } from '../types';
 import Sidebar from '../components/Sidebar';
 import CommandPalette from '../components/CommandPalette';
 import SopDetail from '../components/SopDetail';
-import { WorkspaceSwitcher } from '../components/WorkspaceSwitcher';
 import { UserMenu } from '../components/UserMenu';
 
 const INITIAL_SOPS: SOP[] = [
@@ -492,7 +491,7 @@ export default function Home() {
     const parts = text.split(searchRegex);
     return parts.map((part, index) =>
       searchRegex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 text-foreground rounded px-0.5" data-match="true">
+        <mark key={index} className="bg-highlight text-highlight-text rounded-sm px-1" data-match="true">
           {part}
         </mark>
       ) : part
@@ -634,21 +633,12 @@ export default function Home() {
         searchQuery={searchQuery}
         pinnedIds={pinnedIds}
         onTogglePin={togglePin}
-        onAddSOP={() => {
-          setIsEditMode(false);
-          setEditingSOP(null);
-          resetForm();
-          setShowAddPanel(true);
-        }}
       />
 
       <div className="flex-1 flex flex-col">
         <div className="bg-background border-b border-border px-4 flex items-center h-14">
-          {/* Left — workspace switcher */}
-          <WorkspaceSwitcher />
-
           {/* Center — search */}
-          <div className="flex-1 flex items-center justify-center px-4">
+          <div className="flex-1 flex items-center justify-center">
             <div className="relative w-full max-w-md">
               <svg
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-text-faint"
@@ -738,8 +728,25 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right — user menu (theme toggle lives inside the dropdown) */}
-          <UserMenu />
+          {/* Right — Add SOP + user menu */}
+          <div className="ml-auto flex items-center gap-3">
+            {/* TODO: gate behind canCreateSop / admin role when auth is added */}
+            <button
+              onClick={() => {
+                setIsEditMode(false);
+                setEditingSOP(null);
+                resetForm();
+                setShowAddPanel(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium text-text-secondary rounded-lg hover:bg-surface-2 hover:shadow-sm active:bg-surface-3 transition-all duration-150"
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              Add SOP
+            </button>
+            <UserMenu />
+          </div>
         </div>
 
         <div ref={detailContainerRef} className="flex-1 overflow-y-auto">

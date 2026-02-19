@@ -158,7 +158,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
         regex.test(part) ? (
           <span
             key={i}
-            className="bg-yellow-200/70 rounded-sm leading-[inherit] whitespace-pre-wrap"
+            className="bg-highlight text-highlight-text rounded-sm px-0.5 leading-[inherit] whitespace-pre-wrap"
           >
             {part}
           </span>
