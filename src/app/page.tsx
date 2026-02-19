@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SOP, Contact } from '../types';
 import Sidebar from '../components/Sidebar';
+import CommandPalette from '../components/CommandPalette';
 
 const INITIAL_SOPS: SOP[] = [
   {
@@ -265,6 +266,7 @@ export default function Home() {
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearchQuery(searchQuery), 200);
     return () => clearTimeout(t);
@@ -365,6 +367,60 @@ export default function Home() {
       detailContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [selectedSOP?.id]);
+
+  // ── Cmd+K / '/' → open command palette ──────────────────────────────────────
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+        return;
+      }
+      if (e.key === '/') {
+        const target = e.target as HTMLElement;
+        const inInput =
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable;
+        if (!inInput) {
+          e.preventDefault();
+          setCommandPaletteOpen(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, []);
+
+  // ── Navigate palette section match → select SOP + highlight + scroll ────────
+  const handleNavigateToSection = useCallback(
+    (sopId: string, query: string) => {
+      const sop = sops.find((s) => s.id === sopId);
+      if (!sop) return;
+      setSelectedSOP(sop);
+      setSearchQuery(query);
+      // Wait for debounce (200ms) + render, then scroll to first highlight
+      setTimeout(() => {
+        if (!detailContainerRef.current) return;
+        detailContainerRef.current.scrollTo({ top: 0 });
+        requestAnimationFrame(() => {
+          if (!detailContainerRef.current) return;
+          const marks = detailContainerRef.current.querySelectorAll('[data-match="true"]');
+          if (marks.length === 0) return;
+          const mark = marks[0] as HTMLElement;
+          const containerTop = detailContainerRef.current.getBoundingClientRect().top;
+          const markTop = mark.getBoundingClientRect().top;
+          detailContainerRef.current.scrollBy({
+            top: markTop - containerTop - 100,
+            behavior: 'smooth',
+          });
+          setCurrentMatchIndex(0);
+          setTotalMatches(marks.length);
+        });
+      }, 280);
+    },
+    [sops]
+  );
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -552,9 +608,10 @@ export default function Home() {
                 type="text"
                 placeholder="What do you need help with?"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                readOnly
+                onClick={() => setCommandPaletteOpen(true)}
                 onKeyDown={handleSearchKeyDown}
-                className="w-full pl-10 pr-24 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                className="w-full pl-10 pr-24 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow cursor-pointer select-none"
               />
 
               {selectedSOP && debouncedSearchQuery.trim() && totalMatches > 0 && (
@@ -749,6 +806,20 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        sops={sops}
+        onSelectSOP={(sop) => {
+          setSelectedSOP(sop);
+          setCommandPaletteOpen(false);
+        }}
+        onNavigateToSection={(sopId, query) => {
+          handleNavigateToSection(sopId, query);
+          setCommandPaletteOpen(false);
+        }}
+      />
 
       {showAddPanel && (
         <>
