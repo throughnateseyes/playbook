@@ -722,32 +722,25 @@ export default function Home() {
         <div ref={detailContainerRef} className="flex-1 overflow-y-auto">
           {selectedSOP ? (
             <div className="max-w-4xl mx-auto px-8 py-10">
-              <div className="mb-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-blue-700 bg-blue-50 px-3 py-1 rounded-full font-semibold tracking-wide">
-                      {selectedSOP.category}
-                    </span>
-                    {selectedSOP.tags.map((tag) => (
-                      <span key={tag} className="text-xs text-gray-700 bg-gray-100 px-3 py-1 rounded-full font-medium">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+              <div className="mb-8">
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <h1 className="flex-1 min-w-0 text-2xl font-semibold text-gray-900 tracking-tight leading-snug">
+                    {highlightText(selectedSOP.title, searchQuery)}
+                  </h1>
                   <button
                     onClick={handleEditClick}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors flex items-center gap-2"
+                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-neutral-100 hover:shadow-sm active:bg-neutral-200 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
                   >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-gray-600">
-                      <path d="M11.333 2A1.886 1.886 0 0 1 14 4.667l-9 9-3.667.666.667-3.666 9-9Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="text-gray-500">
+                      <path d="M11.333 2A1.886 1.886 0 0 1 14 4.667l-9 9-3.667.666.667-3.666 9-9Z"
+                        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     Edit
                   </button>
                 </div>
-                <h1 className="text-3xl font-semibold text-gray-900 mb-2 tracking-tight leading-tight">
-                  {highlightText(selectedSOP.title, searchQuery)}
-                </h1>
-                <p className="text-sm text-gray-500">{selectedSOP.lastUpdated}</p>
+                <p className="text-sm text-neutral-500 leading-snug">
+                  {[selectedSOP.category, ...selectedSOP.tags.slice(0, 2)].filter(Boolean).join(' · ')}
+                </p>
               </div>
 
               <section className="mb-8">
