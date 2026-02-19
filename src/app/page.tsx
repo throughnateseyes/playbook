@@ -1,38 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { Menu, Wrench, Headset, Receipt, KeyRound } from 'lucide-react';
-
-interface EdgeCase {
-  title: string;
-  description: string;
-}
-
-interface Escalation {
-  when: string;
-  contact: string;
-}
-
-interface Contact {
-  label: string;
-  name: string;
-  team: string;
-  reason: string;
-}
-
-interface SOP {
-  id: string;
-  title: string;
-  category: string;
-  tags: string[];
-  lastUpdated: string;
-  overview: string;
-  steps: string[];
-  edgeCases: EdgeCase[];
-  escalation: Escalation;
-  contacts: Contact[];
-  photos: string[];
-}
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { SOP, Contact } from '../types';
+import Sidebar from '../components/Sidebar';
 
 const INITIAL_SOPS: SOP[] = [
   {
@@ -218,31 +188,90 @@ const INITIAL_SOPS: SOP[] = [
   },
 ];
 
+
 const CATEGORIES = ['Operations', 'Resident Support', 'Finance', 'Leasing'];
 
-const CATEGORY_META: Record<string, { icon: React.ElementType }> = {
-  'Operations':       { icon: Wrench },
-  'Resident Support': { icon: Headset },
-  'Finance':          { icon: Receipt },
-  'Leasing':          { icon: KeyRound },
-};
+const AskAISection = React.memo(function AskAISection({ selectedSOP }: { selectedSOP: SOP }) {
+  const [question, setQuestion] = useState('');
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [isThinking, setIsThinking] = useState(false);
 
+  const handleAskAI = () => {
+    if (!question.trim()) return;
+    setIsThinking(true);
+    setAiResponse(null);
+    setTimeout(() => {
+      setAiResponse(
+        `Based on "${selectedSOP.title}", you should start by reviewing: "${selectedSOP.steps[0]}". If this issue involves escalation, reference: "${selectedSOP.escalation.when}".`
+      );
+      setIsThinking(false);
+    }, 800);
+  };
+
+  return (
+    <section className="mb-8">
+      <div className="bg-white border border-gray-300 rounded-2xl p-8 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-blue-600">
+              <path d="M8 11v-1m0-4V3m0 8h.01M14 8A6 6 0 1 1 2 8a6 6 0 0 1 12 0Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
+            Ask About This Procedure
+          </h2>
+        </div>
+
+        <div className="flex gap-3 mb-4">
+          <input
+            type="text"
+            placeholder="Example: What if the resident is not home?"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+          />
+          <button
+            onClick={handleAskAI}
+            disabled={!question.trim()}
+            className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+          >
+            Ask
+          </button>
+        </div>
+
+        {isThinking && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span>Thinking...</span>
+          </div>
+        )}
+
+        {aiResponse && (
+          <div className="mt-4 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+            <p className="text-sm text-gray-800 leading-relaxed">
+              {aiResponse}
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+});
 
 export default function Home() {
   const [sops, setSops] = useState<SOP[]>(INITIAL_SOPS);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedSOP, setSelectedSOP] = useState<SOP | null>(null);
   const [showAddPanel, setShowAddPanel] = useState(false);
-  const [question, setQuestion] = useState("");
-  const [aiResponse, setAiResponse] = useState<string | null>(null);
-  const [isThinking, setIsThinking] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearchQuery(searchQuery), 200);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [totalMatches, setTotalMatches] = useState(0);
   const detailContainerRef = useRef<HTMLDivElement>(null);
-  const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const sidebarScrollRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -279,38 +308,6 @@ export default function Home() {
       });
     }
   }, [editingSOP]);
-
-  const handleAskAI = () => {
-    if (!question.trim() || !selectedSOP) return;
-
-    setIsThinking(true);
-    setAiResponse(null);
-
-    setTimeout(() => {
-      setAiResponse(
-        `Based on "${selectedSOP.title}", you should start by reviewing: "${selectedSOP.steps[0]}". If this issue involves escalation, reference: "${selectedSOP.escalation.when}".`
-      );
-      setIsThinking(false);
-    }, 800);
-  };
-
-  const highlightText = (text: string, query: string) => {
-    if (!query.trim() || !selectedSOP) return text;
-
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = text.split(regex);
-
-    return parts.map((part, index) => {
-      if (regex.test(part)) {
-        return (
-          <mark key={index} className="bg-yellow-200 text-gray-900 rounded px-0.5" data-match="true">
-            {part}
-          </mark>
-        );
-      }
-      return part;
-    });
-  };
 
   const scrollToMatch = (index: number) => {
     if (!detailContainerRef.current) return;
@@ -349,7 +346,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (!selectedSOP || !searchQuery.trim() || !detailContainerRef.current) {
+    if (!selectedSOP || !debouncedSearchQuery.trim() || !detailContainerRef.current) {
       setTotalMatches(0);
       setCurrentMatchIndex(0);
       return;
@@ -361,7 +358,7 @@ export default function Home() {
       setTotalMatches(marks.length);
       setCurrentMatchIndex(0);
     }, 50);
-  }, [searchQuery, selectedSOP]);
+  }, [debouncedSearchQuery, selectedSOP]);
 
   useEffect(() => {
     if (selectedSOP && detailContainerRef.current) {
@@ -382,19 +379,24 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [showAddPanel]);
 
-  const filteredSOPs = sops.filter((sop) => {
-    const matchesCat = !selectedCategory || sop.category === selectedCategory;
-    const q = searchQuery.toLowerCase();
-    const matchesSearch = !q || (
-      sop.title.toLowerCase().includes(q) ||
-      sop.category.toLowerCase().includes(q) ||
-      sop.tags.some(tag => tag.toLowerCase().includes(q)) ||
-      sop.overview.toLowerCase().includes(q) ||
-      sop.steps.some(step => step.toLowerCase().includes(q)) ||
-      sop.edgeCases.some(ec => ec.title.toLowerCase().includes(q) || ec.description.toLowerCase().includes(q))
+
+  const searchRegex = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) return null;
+    const escaped = debouncedSearchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(${escaped})`, 'gi');
+  }, [debouncedSearchQuery]);
+
+  const highlightText = useCallback((text: string): React.ReactNode => {
+    if (!searchRegex || !selectedSOP) return text;
+    const parts = text.split(searchRegex);
+    return parts.map((part, index) =>
+      searchRegex.test(part) ? (
+        <mark key={index} className="bg-yellow-200 text-gray-900 rounded px-0.5" data-match="true">
+          {part}
+        </mark>
+      ) : part
     );
-    return matchesCat && matchesSearch;
-  });
+  }, [searchRegex, selectedSOP]);
 
   const resetForm = () => {
     setFormData({
@@ -524,127 +526,12 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans antialiased">
-      <div className={[
-        "bg-white border-r border-gray-100 transition-all duration-200 ease-out flex flex-col flex-shrink-0",
-        sidebarOpen ? "w-[268px]" : "w-[72px]"
-      ].join(" ")}>
-
-        {sidebarOpen ? (
-          <div className="h-16 flex items-center px-4 border-b border-gray-100 flex-shrink-0">
-            <span className="flex-1 text-sm font-semibold text-gray-900 tracking-tight">Playbook</span>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:shadow-sm active:bg-gray-200 rounded-md transition-all duration-150"
-              aria-label="Collapse sidebar"
-            >
-              <Menu size={18} />
-            </button>
-          </div>
-        ) : (
-          <div className="h-16 flex items-center justify-center border-b border-gray-100 flex-shrink-0">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:shadow-sm active:bg-gray-200 rounded-md transition-all duration-150"
-              aria-label="Expand sidebar"
-            >
-              <Menu size={18} />
-            </button>
-          </div>
-        )}
-
-        {sidebarOpen ? (
-          <div ref={sidebarScrollRef} className="flex-1 overflow-y-auto">
-            <div className="px-3 pb-4 pt-3">
-              {CATEGORIES.map(category => {
-                const categorySOPs = filteredSOPs.filter(sop => sop.category === category);
-                if (categorySOPs.length === 0) return null;
-                const { icon: Icon } = CATEGORY_META[category];
-                return (
-                  <div key={category} ref={el => { categoryRefs.current[category] = el; }} className="mb-4">
-                    <div className="flex items-center gap-1.5 px-2 mb-1.5">
-                      <Icon size={15} strokeWidth={1.75} className="text-gray-400" />
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                        {category}
-                      </span>
-                      <div className="ml-auto">
-                        {selectedCategory === category ? (
-                          <button
-                            onClick={() => setSelectedCategory(null)}
-                            className="text-[11px] text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:shadow-sm px-2.5 py-1 rounded-md transition-all duration-150"
-                          >
-                            Clear
-                          </button>
-                        ) : (
-                          <span className="text-[10px] text-gray-300 tabular-nums">{categorySOPs.length}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="space-y-0.5">
-                      {categorySOPs.map(sop => {
-                        const isSelected = selectedSOP?.id === sop.id;
-                        return (
-                          <button key={sop.id}
-                            onClick={() => setSelectedSOP(sop)}
-                            className={["w-full text-left px-2 py-2 rounded-lg transition-all duration-150",
-                              isSelected ? "bg-gray-50 shadow-sm" : "hover:bg-gray-50 active:bg-gray-100"
-                            ].join(" ")}
-                          >
-                            <div className="pl-2">
-                              <div className={["text-[13px] leading-snug truncate",
-                                isSelected ? "font-semibold text-gray-900" : "font-medium text-gray-700"
-                              ].join(" ")}>
-                                {sop.title}
-                              </div>
-                              {sop.tags.length > 0 && (
-                                <div className="text-[11px] text-neutral-400 mt-0.5 truncate">
-                                  {sop.tags.slice(0, 2).join(' · ')}
-                                </div>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {searchQuery && filteredSOPs.length === 0 && (
-                <div className="px-2 py-8 text-center">
-                  <p className="text-sm text-gray-400">No results for &ldquo;{searchQuery}&rdquo;</p>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center pt-3 pb-4 gap-0.5">
-            {CATEGORIES.map(category => {
-              const { icon: Icon } = CATEGORY_META[category];
-              const isActive = selectedCategory === category;
-              return (
-                <button key={category}
-                  onClick={() => {
-                    setSelectedCategory(isActive ? null : category);
-                    setSidebarOpen(true);
-                  }}
-                  className={[
-                    "relative group w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-150",
-                    isActive
-                      ? "bg-gray-200 text-gray-800 shadow-sm"
-                      : "text-gray-400 hover:bg-gray-100 hover:text-gray-700 active:bg-gray-200"
-                  ].join(" ")}
-                  title={category}
-                >
-                  <Icon size={18} strokeWidth={1.75} />
-                  <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50">
-                    {category}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      <Sidebar
+        sops={sops}
+        selectedSOP={selectedSOP}
+        onSelectSOP={setSelectedSOP}
+        searchQuery={searchQuery}
+      />
 
       <div className="flex-1 flex flex-col">
         <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between h-16 shadow-sm">
@@ -670,7 +557,7 @@ export default function Home() {
                 className="w-full pl-10 pr-24 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
               />
 
-              {selectedSOP && searchQuery.trim() && totalMatches > 0 && (
+              {selectedSOP && debouncedSearchQuery.trim() && totalMatches > 0 && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                   <span className="text-xs text-gray-600 font-medium">
                     {currentMatchIndex + 1} of {totalMatches}
@@ -725,7 +612,7 @@ export default function Home() {
               <div className="mb-8">
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <h1 className="flex-1 min-w-0 text-2xl font-semibold text-gray-900 tracking-tight leading-snug">
-                    {highlightText(selectedSOP.title, searchQuery)}
+                    {highlightText(selectedSOP.title)}
                   </h1>
                   <button
                     onClick={handleEditClick}
@@ -747,7 +634,7 @@ export default function Home() {
                 <div className="bg-white rounded-2xl border border-gray-300 shadow-sm p-8">
                   <h2 className="text-xl font-semibold text-gray-900 mb-4 tracking-tight">Overview</h2>
                   <p className="text-base text-gray-700 leading-relaxed">
-                    {highlightText(selectedSOP.overview, searchQuery)}
+                    {highlightText(selectedSOP.overview)}
                   </p>
                 </div>
               </section>
@@ -768,7 +655,7 @@ export default function Home() {
                           </div>
                           <div className="flex-1 min-w-0 pt-1">
                             <p className="text-base text-gray-800 leading-relaxed max-w-2xl">
-                              {highlightText(step, searchQuery)}
+                              {highlightText(step)}
                             </p>
                           </div>
                           <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -789,7 +676,7 @@ export default function Home() {
                   <div className="grid grid-cols-3 gap-4">
                     {selectedSOP.photos.map((photo, index) => (
                       <div key={index} className="aspect-video bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-300 flex items-center justify-center p-4 text-center hover:border-gray-400 transition-colors">
-                        <span className="text-sm text-gray-600 font-medium">{highlightText(photo, searchQuery)}</span>
+                        <span className="text-sm text-gray-600 font-medium">{highlightText(photo)}</span>
                       </div>
                     ))}
                   </div>
@@ -802,8 +689,8 @@ export default function Home() {
                   <div className="space-y-4">
                     {selectedSOP.edgeCases.map((edge, index) => (
                       <div key={index} className="bg-amber-50 border border-amber-300 rounded-xl p-5 hover:bg-amber-100 transition-colors">
-                        <h3 className="text-sm font-semibold text-gray-900 mb-2">{highlightText(edge.title, searchQuery)}</h3>
-                        <p className="text-sm text-gray-700 leading-relaxed">{highlightText(edge.description, searchQuery)}</p>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-2">{highlightText(edge.title)}</h3>
+                        <p className="text-sm text-gray-700 leading-relaxed">{highlightText(edge.description)}</p>
                       </div>
                     ))}
                   </div>
@@ -815,10 +702,10 @@ export default function Home() {
                   <h2 className="text-xl font-semibold text-gray-900 mb-6 tracking-tight">When to Escalate</h2>
                   <div className="bg-red-50 border border-red-300 rounded-xl p-6 mb-8">
                     <p className="text-base text-gray-900 mb-3 leading-relaxed">
-                      <strong className="font-semibold">When:</strong> {highlightText(selectedSOP.escalation.when, searchQuery)}
+                      <strong className="font-semibold">When:</strong> {highlightText(selectedSOP.escalation.when)}
                     </p>
                     <p className="text-base text-gray-900 leading-relaxed">
-                      <strong className="font-semibold">Contact:</strong> {highlightText(selectedSOP.escalation.contact, searchQuery)}
+                      <strong className="font-semibold">Contact:</strong> {highlightText(selectedSOP.escalation.contact)}
                     </p>
                   </div>
 
@@ -847,53 +734,7 @@ export default function Home() {
                 </div>
               </section>
 
-              <section className="mb-8">
-                <div className="bg-white border border-gray-300 rounded-2xl p-8 shadow-sm">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-blue-600">
-                        <path d="M8 11v-1m0-4V3m0 8h.01M14 8A6 6 0 1 1 2 8a6 6 0 0 1 12 0Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                    <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
-                      Ask About This Procedure
-                    </h2>
-                  </div>
-
-                  <div className="flex gap-3 mb-4">
-                    <input
-                      type="text"
-                      placeholder="Example: What if the resident is not home?"
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
-                      className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
-                    />
-                    <button
-                      onClick={handleAskAI}
-                      disabled={!question.trim()}
-                      className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                    >
-                      Ask
-                    </button>
-                  </div>
-
-                  {isThinking && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Thinking...</span>
-                    </div>
-                  )}
-
-                  {aiResponse && (
-                    <div className="mt-4 p-5 bg-gray-50 border border-gray-200 rounded-xl">
-                      <p className="text-sm text-gray-800 leading-relaxed">
-                        {aiResponse}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </section>
+              <AskAISection selectedSOP={selectedSOP} />
             </div>
           ) : (
             <div className="flex items-center justify-center h-full">
