@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { Menu, Wrench, Headset, Receipt, KeyRound } from 'lucide-react';
 
 interface EdgeCase {
   title: string;
@@ -219,6 +220,14 @@ const INITIAL_SOPS: SOP[] = [
 
 const CATEGORIES = ['Operations', 'Resident Support', 'Finance', 'Leasing'];
 
+const CATEGORY_META: Record<string, { icon: React.ElementType }> = {
+  'Operations':       { icon: Wrench },
+  'Resident Support': { icon: Headset },
+  'Finance':          { icon: Receipt },
+  'Leasing':          { icon: KeyRound },
+};
+
+
 export default function Home() {
   const [sops, setSops] = useState<SOP[]>(INITIAL_SOPS);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -228,9 +237,12 @@ export default function Home() {
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [totalMatches, setTotalMatches] = useState(0);
   const detailContainerRef = useRef<HTMLDivElement>(null);
+  const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const sidebarScrollRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -371,20 +383,18 @@ export default function Home() {
   }, [showAddPanel]);
 
   const filteredSOPs = sops.filter((sop) => {
-    const query = searchQuery.toLowerCase();
-    if (!query) return true;
-
-    return (
-      sop.title.toLowerCase().includes(query) ||
-      sop.category.toLowerCase().includes(query) ||
-      sop.tags.some(tag => tag.toLowerCase().includes(query)) ||
-      sop.overview.toLowerCase().includes(query) ||
-      sop.steps.some(step => step.toLowerCase().includes(query)) ||
-      sop.edgeCases.some(ec => ec.title.toLowerCase().includes(query) || ec.description.toLowerCase().includes(query))
+    const matchesCat = !selectedCategory || sop.category === selectedCategory;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !q || (
+      sop.title.toLowerCase().includes(q) ||
+      sop.category.toLowerCase().includes(q) ||
+      sop.tags.some(tag => tag.toLowerCase().includes(q)) ||
+      sop.overview.toLowerCase().includes(q) ||
+      sop.steps.some(step => step.toLowerCase().includes(q)) ||
+      sop.edgeCases.some(ec => ec.title.toLowerCase().includes(q) || ec.description.toLowerCase().includes(q))
     );
+    return matchesCat && matchesSearch;
   });
-
-  const hasResults = filteredSOPs.length > 0;
 
   const resetForm = () => {
     setFormData({
@@ -514,84 +524,126 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans antialiased">
-      <div className={["bg-white border-r border-gray-200 transition-all duration-200 ease-out flex flex-col", sidebarOpen ? "w-72" : "w-16"].join(" ")}>
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 h-16">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="hover:bg-gray-100 active:bg-gray-200 active:scale-95 rounded-lg p-2 transition-all"
-            aria-label="Toggle sidebar"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-gray-600">
-              <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </button>
-          {sidebarOpen && <span className="text-lg font-semibold text-gray-900 tracking-tight">Playbook</span>}
-        </div>
+      <div className={[
+        "bg-white border-r border-gray-100 transition-all duration-200 ease-out flex flex-col flex-shrink-0",
+        sidebarOpen ? "w-[268px]" : "w-[72px]"
+      ].join(" ")}>
 
-        <div className="flex-1 overflow-y-auto px-2 py-4">
-          {CATEGORIES.map((category) => {
-            const categorySOPs = filteredSOPs.filter((sop) => sop.category === category);
-            if (categorySOPs.length === 0) return null;
+        {sidebarOpen ? (
+          <div className="h-16 flex items-center px-4 border-b border-gray-100 flex-shrink-0">
+            <span className="flex-1 text-sm font-semibold text-gray-900 tracking-tight">Playbook</span>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:shadow-sm active:bg-gray-200 rounded-md transition-all duration-150"
+              aria-label="Collapse sidebar"
+            >
+              <Menu size={18} />
+            </button>
+          </div>
+        ) : (
+          <div className="h-16 flex items-center justify-center border-b border-gray-100 flex-shrink-0">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:shadow-sm active:bg-gray-200 rounded-md transition-all duration-150"
+              aria-label="Expand sidebar"
+            >
+              <Menu size={18} />
+            </button>
+          </div>
+        )}
 
-            return (
-              <div key={category} className="mb-6">
-                {sidebarOpen && (
-                  <div className="px-3 mb-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">{category}</span>
-                  </div>
-                )}
-                <div className="space-y-1">
-                  {categorySOPs.map((sop) => {
-                    const isSelected = selectedSOP?.id === sop.id;
-
-                    return (
-                      <button
-                        key={sop.id}
-                        onClick={() => setSelectedSOP(sop)}
-                        className={[
-                          "w-full text-left rounded-xl transition-all duration-150 relative overflow-hidden",
-                          isSelected
-                            ? "bg-blue-50 shadow-sm"
-                            : "hover:bg-gray-50 active:bg-gray-100 active:scale-[0.98]"
-                        ].join(" ")}
-                        title={!sidebarOpen ? sop.title : undefined}
-                      >
-                        {isSelected && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r" />
-                        )}
-                        {sidebarOpen ? (
-                          <div className={["px-3 py-3", isSelected ? "pl-4" : ""].join(" ")}>
-                            <div className={["text-sm mb-1 leading-snug tracking-tight", isSelected ? "font-semibold text-gray-900" : "font-medium text-gray-800"].join(" ")}>
-                              {sop.title}
-                            </div>
-                            <div className="text-xs text-gray-500 mb-2">{sop.lastUpdated}</div>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {sop.tags.slice(0, 2).map((tag) => (
-                                <span key={tag} className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md font-medium">
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
+        {sidebarOpen ? (
+          <div ref={sidebarScrollRef} className="flex-1 overflow-y-auto">
+            <div className="px-3 pb-4 pt-3">
+              {CATEGORIES.map(category => {
+                const categorySOPs = filteredSOPs.filter(sop => sop.category === category);
+                if (categorySOPs.length === 0) return null;
+                const { icon: Icon } = CATEGORY_META[category];
+                return (
+                  <div key={category} ref={el => { categoryRefs.current[category] = el; }} className="mb-4">
+                    <div className="flex items-center gap-1.5 px-2 mb-1.5">
+                      <Icon size={15} strokeWidth={1.75} className="text-gray-400" />
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                        {category}
+                      </span>
+                      <div className="ml-auto">
+                        {selectedCategory === category ? (
+                          <button
+                            onClick={() => setSelectedCategory(null)}
+                            className="text-[11px] text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:shadow-sm px-2.5 py-1 rounded-md transition-all duration-150"
+                          >
+                            Clear
+                          </button>
                         ) : (
-                          <div className="flex justify-center py-3" title={sop.title}>
-                            <div className={["w-2 h-2 rounded-full", isSelected ? "bg-blue-500" : "bg-gray-300"].join(" ")} />
-                          </div>
+                          <span className="text-[10px] text-gray-300 tabular-nums">{categorySOPs.length}</span>
                         )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+                      </div>
+                    </div>
+                    <div className="space-y-0.5">
+                      {categorySOPs.map(sop => {
+                        const isSelected = selectedSOP?.id === sop.id;
+                        return (
+                          <button key={sop.id}
+                            onClick={() => setSelectedSOP(sop)}
+                            className={["w-full text-left px-2 py-2 rounded-lg transition-all duration-150",
+                              isSelected ? "bg-gray-50 shadow-sm" : "hover:bg-gray-50 active:bg-gray-100"
+                            ].join(" ")}
+                          >
+                            <div className="pl-2">
+                              <div className={["text-[13px] leading-snug truncate",
+                                isSelected ? "font-semibold text-gray-900" : "font-medium text-gray-700"
+                              ].join(" ")}>
+                                {sop.title}
+                              </div>
+                              {sop.tags.length > 0 && (
+                                <div className="text-[11px] text-neutral-400 mt-0.5 truncate">
+                                  {sop.tags.slice(0, 2).join(' · ')}
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
 
-          {searchQuery && !hasResults && (
-            <div className="px-3 py-8 text-center">
-              <p className="text-sm text-gray-500">No results found</p>
+              {searchQuery && filteredSOPs.length === 0 && (
+                <div className="px-2 py-8 text-center">
+                  <p className="text-sm text-gray-400">No results for &ldquo;{searchQuery}&rdquo;</p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center pt-3 pb-4 gap-0.5">
+            {CATEGORIES.map(category => {
+              const { icon: Icon } = CATEGORY_META[category];
+              const isActive = selectedCategory === category;
+              return (
+                <button key={category}
+                  onClick={() => {
+                    setSelectedCategory(isActive ? null : category);
+                    setSidebarOpen(true);
+                  }}
+                  className={[
+                    "relative group w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-150",
+                    isActive
+                      ? "bg-gray-200 text-gray-800 shadow-sm"
+                      : "text-gray-400 hover:bg-gray-100 hover:text-gray-700 active:bg-gray-200"
+                  ].join(" ")}
+                  title={category}
+                >
+                  <Icon size={18} strokeWidth={1.75} />
+                  <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50">
+                    {category}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col">
