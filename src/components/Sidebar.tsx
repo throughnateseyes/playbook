@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Menu, Home, List, Star, Wrench, Headset, Receipt, KeyRound } from "lucide-react";
 import type { SOP } from "../types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const PINS_KEY = "playbook_pins";
 
 const VIEW_ITEMS = [
   { id: "home",   label: "Home",     icon: Home },
@@ -121,30 +119,15 @@ interface SidebarProps {
   selectedSOP: SOP | null;
   onSelectSOP: (sop: SOP) => void;
   searchQuery: string;
+  pinnedIds: Set<string>;
+  onTogglePin: (id: string) => void;
 }
 
-export default function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery }: SidebarProps) {
+export default function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, pinnedIds, onTogglePin }: SidebarProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeView, setActiveView] = useState<string>("all");
-  const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => {
-    try {
-      if (typeof window === "undefined") return new Set();
-      const raw = localStorage.getItem(PINS_KEY);
-      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
-
-  const togglePin = useCallback((id: string) => {
-    setPinnedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      try { localStorage.setItem(PINS_KEY, JSON.stringify([...next])); } catch {}
-      return next;
-    });
-  }, []);
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => setHasMounted(true), []);
 
   const activateView = useCallback((id: string) => {
     setActiveView(id);
@@ -199,7 +182,7 @@ export default function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery }:
           <nav className="px-3 pt-3 pb-1">
             {VIEW_ITEMS.map(({ id, label, icon: Icon }) => {
               const isActive = activeView === id;
-              const count = id === "pinned" && pinnedIds.size > 0 ? pinnedIds.size : undefined;
+              const count = id === "pinned" && hasMounted && pinnedIds.size > 0 ? pinnedIds.size : undefined;
               return (
                 <button
                   key={id}
@@ -286,7 +269,7 @@ export default function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery }:
                     isSelected={selectedSOP?.id === sop.id}
                     isPinned={pinnedIds.has(sop.id)}
                     onSelect={() => onSelectSOP(sop)}
-                    onTogglePin={() => togglePin(sop.id)}
+                    onTogglePin={() => onTogglePin(sop.id)}
                   />
                 ))}
               </div>

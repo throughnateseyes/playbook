@@ -15,6 +15,19 @@ export interface Contact {
   reason: string;
 }
 
+export interface StepAttachment {
+  type: "image" | "file";
+  url: string;
+  label?: string;
+}
+
+export interface Step {
+  title: string;
+  description?: string;
+  script?: string;
+  attachments?: StepAttachment[];
+}
+
 export interface SOP {
   id: string;
   title: string;
@@ -22,7 +35,7 @@ export interface SOP {
   tags: string[];
   lastUpdated: string;
   overview: string;
-  steps: string[];
+  steps: Step[];
   edgeCases: EdgeCase[];
   escalation: Escalation;
   contacts: Contact[];

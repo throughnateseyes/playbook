@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { SOP, Contact } from '../types';
 import Sidebar from '../components/Sidebar';
 import CommandPalette from '../components/CommandPalette';
+import SopDetail from '../components/SopDetail';
 
 const INITIAL_SOPS: SOP[] = [
   {
@@ -14,12 +15,22 @@ const INITIAL_SOPS: SOP[] = [
     lastUpdated: 'Updated 2 days ago',
     overview: 'Handle emergency maintenance requests that require immediate attention, including water leaks, heating/cooling failures, and electrical issues.',
     steps: [
-      'Receive and log the emergency request in the system',
-      'Assess severity and potential safety risks',
-      'Contact on-call maintenance technician within 15 minutes',
-      'Notify property manager if estimated cost exceeds $500',
-      'Document all actions taken and time stamps',
-      'Follow up with resident within 24 hours of resolution',
+      {
+        title: 'Receive and log the emergency request in the system',
+        description: 'Log in the property management system under Work Orders → Emergency. Include unit number, time received, and nature of issue.',
+        script: 'Portal: [https://portal.example.com]\nWork Orders → New → Emergency\n\nUnit #: ___\nIssue: ___\nReported by: ___\nTime received: ___',
+      },
+      {
+        title: 'Assess severity and potential safety risks',
+        description: 'Determine if the issue poses immediate danger (gas leak, flood, no heat in winter). If yes, contact emergency services first.',
+      },
+      {
+        title: 'Contact on-call maintenance technician within 15 minutes',
+        description: 'Use the on-call rotation posted in #maintenance on Slack. If unreachable after 2 attempts, escalate to Maintenance Lead.',
+      },
+      { title: 'Notify property manager if estimated cost exceeds $500' },
+      { title: 'Document all actions taken and time stamps' },
+      { title: 'Follow up with resident within 24 hours of resolution' },
     ],
     edgeCases: [
       { title: 'After-hours request', description: 'Use emergency contact list. Document overtime authorization.' },
@@ -43,13 +54,13 @@ const INITIAL_SOPS: SOP[] = [
     lastUpdated: 'Updated 1 week ago',
     overview: 'Complete move-in process for new residents, including unit inspection, key handoff, and orientation.',
     steps: [
-      'Confirm move-in date and time with resident 48 hours in advance',
-      'Complete pre-move-in unit inspection with checklist',
-      'Prepare welcome packet with keys, parking passes, and amenity access cards',
-      'Conduct walk-through with resident, documenting any existing damage',
-      'Review lease terms, community rules, and emergency procedures',
-      'Provide contact information for maintenance and management',
-      'Have resident sign move-in inspection form',
+      { title: 'Confirm move-in date and time with resident 48 hours in advance' },
+      { title: 'Complete pre-move-in unit inspection with checklist' },
+      { title: 'Prepare welcome packet with keys, parking passes, and amenity access cards' },
+      { title: 'Conduct walk-through with resident, documenting any existing damage' },
+      { title: 'Review lease terms, community rules, and emergency procedures' },
+      { title: 'Provide contact information for maintenance and management' },
+      { title: 'Have resident sign move-in inspection form' },
     ],
     edgeCases: [
       { title: 'Unit not ready', description: 'Offer temporary accommodation or rent concession. Document in lease.' },
@@ -73,13 +84,13 @@ const INITIAL_SOPS: SOP[] = [
     lastUpdated: 'Updated 3 days ago',
     overview: 'Apply late fees to resident accounts in accordance with lease terms and state regulations.',
     steps: [
-      'Verify rent payment grace period has expired (typically 5th of month)',
-      'Check for pending ACH transfers or checks in mail',
-      'Review lease agreement for specific late fee terms',
-      'Apply late fee to resident account in property management system',
-      'Send automated late payment notice via email and portal',
-      'Document fee application with date and amount',
-      'Monitor account for payment within next 10 days',
+      { title: 'Verify rent payment grace period has expired (typically 5th of month)' },
+      { title: 'Check for pending ACH transfers or checks in mail' },
+      { title: 'Review lease agreement for specific late fee terms' },
+      { title: 'Apply late fee to resident account in property management system' },
+      { title: 'Send automated late payment notice via email and portal' },
+      { title: 'Document fee application with date and amount' },
+      { title: 'Monitor account for payment within next 10 days' },
     ],
     edgeCases: [
       { title: 'Partial payment received', description: 'Apply to rent first, then late fees. Document payment plan if offered.' },
@@ -103,13 +114,13 @@ const INITIAL_SOPS: SOP[] = [
     lastUpdated: 'Updated 5 days ago',
     overview: 'Address noise complaints between residents while maintaining fairness and documentation.',
     steps: [
-      'Log complaint with date, time, location, and nature of noise',
-      'Review community quiet hours policy (typically 10 PM - 7 AM)',
-      'Contact resident making noise via phone or door knock',
-      'Issue verbal warning and document conversation',
-      'Send follow-up email summarizing policy and expectation',
-      'Check back with complainant within 48 hours',
-      'Escalate if complaints continue after two warnings',
+      { title: 'Log complaint with date, time, location, and nature of noise' },
+      { title: 'Review community quiet hours policy (typically 10 PM - 7 AM)' },
+      { title: 'Contact resident making noise via phone or door knock' },
+      { title: 'Issue verbal warning and document conversation' },
+      { title: 'Send follow-up email summarizing policy and expectation' },
+      { title: 'Check back with complainant within 48 hours' },
+      { title: 'Escalate if complaints continue after two warnings' },
     ],
     edgeCases: [
       { title: 'Multiple complainants', description: 'Document all parties. May warrant immediate written warning.' },
@@ -133,13 +144,13 @@ const INITIAL_SOPS: SOP[] = [
     lastUpdated: 'Updated 1 day ago',
     overview: 'Receive, log, and notify residents of package deliveries to ensure security and timely pickup.',
     steps: [
-      'Accept packages from delivery personnel and verify unit number',
-      'Log package in tracking system with date, carrier, and unit number',
-      'Take photo of package label and tracking number',
-      'Send automated notification to resident via email and text',
-      'Store package in designated area organized by unit number',
-      'Follow up if package not picked up within 7 days',
-      'Maintain package log for 30 days after pickup',
+      { title: 'Accept packages from delivery personnel and verify unit number' },
+      { title: 'Log package in tracking system with date, carrier, and unit number' },
+      { title: 'Take photo of package label and tracking number' },
+      { title: 'Send automated notification to resident via email and text' },
+      { title: 'Store package in designated area organized by unit number' },
+      { title: 'Follow up if package not picked up within 7 days' },
+      { title: 'Maintain package log for 30 days after pickup' },
     ],
     edgeCases: [
       { title: 'Large/heavy packages', description: 'Note in system. Resident may need assistance or special arrangement.' },
@@ -163,14 +174,14 @@ const INITIAL_SOPS: SOP[] = [
     lastUpdated: 'Updated 2 weeks ago',
     overview: 'Proactively reach out to residents 90 days before lease expiration to discuss renewal options.',
     steps: [
-      'Generate list of leases expiring in 90-120 days',
-      'Review resident history for any issues or special circumstances',
-      'Prepare renewal offers with current market rates and incentives',
-      'Send initial renewal notice via email with online renewal option',
-      'Follow up with phone call within 5 business days',
-      'Schedule in-person meeting for residents who prefer face-to-face',
-      'Document all communications and resident decisions',
-      'Process renewal paperwork within 48 hours of acceptance',
+      { title: 'Generate list of leases expiring in 90-120 days' },
+      { title: 'Review resident history for any issues or special circumstances' },
+      { title: 'Prepare renewal offers with current market rates and incentives' },
+      { title: 'Send initial renewal notice via email with online renewal option' },
+      { title: 'Follow up with phone call within 5 business days' },
+      { title: 'Schedule in-person meeting for residents who prefer face-to-face' },
+      { title: 'Document all communications and resident decisions' },
+      { title: 'Process renewal paperwork within 48 hours of acceptance' },
     ],
     edgeCases: [
       { title: 'Resident wants to downsize/upsize', description: 'Check unit availability. Offer transfer with pro-rated fees.' },
@@ -203,59 +214,50 @@ const AskAISection = React.memo(function AskAISection({ selectedSOP }: { selecte
     setAiResponse(null);
     setTimeout(() => {
       setAiResponse(
-        `Based on "${selectedSOP.title}", you should start by reviewing: "${selectedSOP.steps[0]}". If this issue involves escalation, reference: "${selectedSOP.escalation.when}".`
+        `Based on "${selectedSOP.title}", you should start by reviewing: "${selectedSOP.steps[0]?.title}". If this issue involves escalation, reference: "${selectedSOP.escalation.when}".`
       );
       setIsThinking(false);
     }, 800);
   };
 
   return (
-    <section className="mb-8">
-      <div className="bg-white border border-gray-300 rounded-2xl p-8 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-blue-600">
-              <path d="M8 11v-1m0-4V3m0 8h.01M14 8A6 6 0 1 1 2 8a6 6 0 0 1 12 0Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 tracking-tight">
-            Ask About This Procedure
-          </h2>
-        </div>
+    <section className="border-t border-neutral-100 pt-6 pb-8">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-400 mb-5">
+        Ask About This Procedure
+      </p>
 
-        <div className="flex gap-3 mb-4">
-          <input
-            type="text"
-            placeholder="Example: What if the resident is not home?"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
-          />
-          <button
-            onClick={handleAskAI}
-            disabled={!question.trim()}
-            className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-          >
-            Ask
-          </button>
-        </div>
-
-        {isThinking && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <span>Thinking...</span>
-          </div>
-        )}
-
-        {aiResponse && (
-          <div className="mt-4 p-5 bg-gray-50 border border-gray-200 rounded-xl">
-            <p className="text-sm text-gray-800 leading-relaxed">
-              {aiResponse}
-            </p>
-          </div>
-        )}
+      <div className="flex gap-3 mb-4">
+        <input
+          type="text"
+          placeholder="Ask a question about this procedure..."
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
+          className="flex-1 px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-[14px] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-transparent transition-shadow"
+        />
+        <button
+          onClick={handleAskAI}
+          disabled={!question.trim()}
+          className="px-4 py-2.5 bg-neutral-900 text-white text-[13px] font-medium rounded-xl hover:bg-neutral-700 active:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          Ask
+        </button>
       </div>
+
+      {isThinking && (
+        <div className="flex items-center gap-2 text-[13px] text-neutral-400">
+          <div className="w-3.5 h-3.5 border-[1.5px] border-neutral-400 border-t-transparent rounded-full animate-spin"></div>
+          <span>Thinking...</span>
+        </div>
+      )}
+
+      {aiResponse && (
+        <div className="mt-3 px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl">
+          <p className="text-[13px] text-neutral-700 leading-relaxed">
+            {aiResponse}
+          </p>
+        </div>
+      )}
     </section>
   );
 });
@@ -267,6 +269,26 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  const PINS_KEY = "playbook_pins";
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+  // Hydration-safe: read localStorage only after mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PINS_KEY);
+      if (raw) setPinnedIds(new Set(JSON.parse(raw) as string[]));
+    } catch {}
+  }, []);
+  const togglePin = useCallback((id: string) => {
+    setPinnedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try { localStorage.setItem(PINS_KEY, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearchQuery(searchQuery), 200);
     return () => clearTimeout(t);
@@ -302,7 +324,7 @@ export default function Home() {
         category: editingSOP.category,
         tags: editingSOP.tags.join(', '),
         overview: editingSOP.overview,
-        steps: editingSOP.steps.length > 0 ? editingSOP.steps : [''],
+        steps: editingSOP.steps.length > 0 ? editingSOP.steps.map(s => s.title) : [''],
         edgeCases: editingSOP.edgeCases.length > 0 ? editingSOP.edgeCases : [{ title: '', description: '' }],
         escalationWhen: editingSOP.escalation.when,
         escalationContact: editingSOP.escalation.contact,
@@ -482,7 +504,7 @@ export default function Home() {
         tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
         lastUpdated: 'Updated just now',
         overview: formData.overview,
-        steps: formData.steps.filter(s => s.trim()),
+        steps: formData.steps.filter(s => s.trim()).map(s => ({ title: s })),
         edgeCases: formData.edgeCases.filter(ec => ec.title.trim() || ec.description.trim()),
         escalation: {
           when: formData.escalationWhen,
@@ -505,7 +527,7 @@ export default function Home() {
         tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
         lastUpdated: 'Just now',
         overview: formData.overview,
-        steps: formData.steps.filter(s => s.trim()),
+        steps: formData.steps.filter(s => s.trim()).map(s => ({ title: s })),
         edgeCases: formData.edgeCases.filter(ec => ec.title.trim() || ec.description.trim()),
         escalation: {
           when: formData.escalationWhen,
@@ -587,6 +609,8 @@ export default function Home() {
         selectedSOP={selectedSOP}
         onSelectSOP={setSelectedSOP}
         searchQuery={searchQuery}
+        pinnedIds={pinnedIds}
+        onTogglePin={togglePin}
       />
 
       <div className="flex-1 flex flex-col">
@@ -672,132 +696,14 @@ export default function Home() {
 
         <div ref={detailContainerRef} className="flex-1 overflow-y-auto">
           {selectedSOP ? (
-            <div className="max-w-4xl mx-auto px-8 py-10">
-              <div className="mb-8">
-                <div className="flex items-start justify-between gap-4 mb-2">
-                  <h1 className="flex-1 min-w-0 text-2xl font-semibold text-gray-900 tracking-tight leading-snug">
-                    {highlightText(selectedSOP.title)}
-                  </h1>
-                  <button
-                    onClick={handleEditClick}
-                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-neutral-100 hover:shadow-sm active:bg-neutral-200 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="text-gray-500">
-                      <path d="M11.333 2A1.886 1.886 0 0 1 14 4.667l-9 9-3.667.666.667-3.666 9-9Z"
-                        stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Edit
-                  </button>
-                </div>
-                <p className="text-sm text-neutral-500 leading-snug">
-                  {[selectedSOP.category, ...selectedSOP.tags.slice(0, 2)].filter(Boolean).join(' · ')}
-                </p>
-              </div>
-
-              <section className="mb-8">
-                <div className="bg-white rounded-2xl border border-gray-300 shadow-sm p-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4 tracking-tight">Overview</h2>
-                  <p className="text-base text-gray-700 leading-relaxed">
-                    {highlightText(selectedSOP.overview)}
-                  </p>
-                </div>
-              </section>
-
-              <section className="mb-8">
-                <div className="bg-white rounded-2xl border border-gray-300 shadow-sm p-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6 tracking-tight">Steps</h2>
-                  <div className="relative">
-                    <div className="absolute left-[19px] top-8 bottom-8 w-px bg-gray-200"></div>
-                    <div className="space-y-4">
-                      {selectedSOP.steps.map((step, index) => (
-                        <div
-                          key={index}
-                          className="relative flex gap-4 p-4 rounded-xl bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md active:translate-y-[1px] transition-all duration-150 group cursor-pointer"
-                        >
-                          <div className="relative z-10 flex-shrink-0 w-10 h-10 rounded-full border-2 border-blue-200 bg-blue-50 text-blue-700 flex items-center justify-center text-sm font-semibold group-hover:border-blue-300 group-hover:bg-blue-100 transition-colors">
-                            {index + 1}
-                          </div>
-                          <div className="flex-1 min-w-0 pt-1">
-                            <p className="text-base text-gray-800 leading-relaxed max-w-2xl">
-                              {highlightText(step)}
-                            </p>
-                          </div>
-                          <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-gray-400">
-                              <path d="M7 10h6m-3-3v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                            </svg>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section className="mb-8">
-                <div className="bg-white rounded-2xl border border-gray-300 shadow-sm p-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6 tracking-tight">Reference Materials</h2>
-                  <div className="grid grid-cols-3 gap-4">
-                    {selectedSOP.photos.map((photo, index) => (
-                      <div key={index} className="aspect-video bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-300 flex items-center justify-center p-4 text-center hover:border-gray-400 transition-colors">
-                        <span className="text-sm text-gray-600 font-medium">{highlightText(photo)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              <section className="mb-8">
-                <div className="bg-white rounded-2xl border border-gray-300 shadow-sm p-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6 tracking-tight">Edge Cases</h2>
-                  <div className="space-y-4">
-                    {selectedSOP.edgeCases.map((edge, index) => (
-                      <div key={index} className="bg-amber-50 border border-amber-300 rounded-xl p-5 hover:bg-amber-100 transition-colors">
-                        <h3 className="text-sm font-semibold text-gray-900 mb-2">{highlightText(edge.title)}</h3>
-                        <p className="text-sm text-gray-700 leading-relaxed">{highlightText(edge.description)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              <section className="mb-8">
-                <div className="bg-white rounded-2xl border border-gray-300 shadow-sm p-8">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6 tracking-tight">When to Escalate</h2>
-                  <div className="bg-red-50 border border-red-300 rounded-xl p-6 mb-8">
-                    <p className="text-base text-gray-900 mb-3 leading-relaxed">
-                      <strong className="font-semibold">When:</strong> {highlightText(selectedSOP.escalation.when)}
-                    </p>
-                    <p className="text-base text-gray-900 leading-relaxed">
-                      <strong className="font-semibold">Contact:</strong> {highlightText(selectedSOP.escalation.contact)}
-                    </p>
-                  </div>
-
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 tracking-tight">Helpful Contacts</h3>
-                  <div className="space-y-3">
-                    {selectedSOP.contacts.map((contact, index) => (
-                      <div
-                        key={index}
-                        className="flex items-start gap-4 p-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 hover:shadow-sm active:scale-[0.99] transition-all cursor-pointer"
-                      >
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold">
-                          {contact.name.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="text-sm font-semibold text-gray-900">{contact.name}</span>
-                            <span className="text-xs text-gray-400">·</span>
-                            <span className="text-xs text-gray-700">{contact.label}</span>
-                            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">{contact.team}</span>
-                          </div>
-                          <p className="text-sm text-gray-600 leading-relaxed">{contact.reason}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
+            <div className="max-w-3xl mx-auto px-10 py-10">
+              <SopDetail
+                sop={selectedSOP}
+                highlightText={highlightText}
+                onEdit={handleEditClick}
+                isPinned={pinnedIds.has(selectedSOP.id)}
+                onTogglePin={() => togglePin(selectedSOP.id)}
+              />
               <AskAISection selectedSOP={selectedSOP} />
             </div>
           ) : (

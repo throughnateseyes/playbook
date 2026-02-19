@@ -49,6 +49,19 @@ function getSnippet(text: string, query: string, maxLen = 120): string {
   return (start > 0 ? "…" : "") + text.slice(start, end) + (end < text.length ? "…" : "");
 }
 
+// Safely extract a displayable string from a step, regardless of shape.
+// Handles Step objects { title, description, script }, legacy strings,
+// and any unexpected runtime shapes — never throws.
+function getStepText(step: unknown): string {
+  if (typeof step === "string") return step;
+  if (step !== null && typeof step === "object") {
+    const s = step as Record<string, unknown>;
+    // Current shape: { title }. Legacy / alternate shape: { text }.
+    return String(s.title ?? s.text ?? "");
+  }
+  return "";
+}
+
 function buildSearchIndex(sops: SOP[]): SearchEntry[] {
   const entries: SearchEntry[] = [];
   for (const sop of sops) {
@@ -72,14 +85,18 @@ function buildSearchIndex(sops: SOP[]): SearchEntry[] {
     }
 
     sop.steps.forEach((step, i) => {
-      if (step.trim()) {
+      const title = getStepText(step);
+      const stepObj = (step !== null && typeof step === "object") ? step as unknown as Record<string, unknown> : null;
+      const parts = [title, stepObj?.description as string | undefined, stepObj?.script as string | undefined].filter(Boolean) as string[];
+      const text = parts.join(" — ");
+      if (text.trim()) {
         entries.push({
           type: "section",
           id: `sec:${sop.id}:step:${i}`,
           sopId: sop.id,
           sopTitle: sop.title,
           sectionLabel: `Step ${i + 1}`,
-          text: step,
+          text,
         });
       }
     });
