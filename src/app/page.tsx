@@ -614,6 +614,13 @@ export default function Home() {
                 className="w-full pl-10 pr-24 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow cursor-pointer select-none"
               />
 
+              {/* ⌘K hint — only when no match counter is showing */}
+              {!(selectedSOP && debouncedSearchQuery.trim() && totalMatches > 0) && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-neutral-400 pointer-events-none select-none font-mono">
+                  ⌘K
+                </span>
+              )}
+
               {selectedSOP && debouncedSearchQuery.trim() && totalMatches > 0 && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                   <span className="text-xs text-gray-600 font-medium">

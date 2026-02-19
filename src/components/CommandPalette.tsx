@@ -139,9 +139,12 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
     <>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <mark key={i} className="bg-yellow-100 text-inherit rounded-sm px-px not-italic">
+          <span
+            key={i}
+            className="bg-yellow-200/70 rounded-sm leading-[inherit] whitespace-pre-wrap"
+          >
             {part}
-          </mark>
+          </span>
         ) : (
           part
         )
@@ -312,6 +315,44 @@ export default function CommandPalette({
   const hasResults = results.length > 0;
   const showEmpty = debouncedQuery.trim() && !hasResults;
 
+  return <CommandPaletteInner {...{ modalRef, inputRef, listRef, query, setQuery, handleKeyDown, activeQuery, hasResults, showEmpty, debouncedQuery, results, selectedIndex, setSelectedIndex, sopResults, sectionResults, sopOffset, sectionOffset, handleSelect, onClose }} />;
+}
+
+// Separated so the enter animation runs fresh on every open (component mounts = isOpen flips to true)
+function CommandPaletteInner({
+  modalRef, inputRef, listRef,
+  query, setQuery, handleKeyDown,
+  activeQuery, hasResults, showEmpty, debouncedQuery,
+  results, selectedIndex, setSelectedIndex,
+  sopResults, sectionResults, sopOffset, sectionOffset,
+  handleSelect, onClose,
+}: {
+  modalRef: React.RefObject<HTMLDivElement | null>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  listRef: React.RefObject<HTMLDivElement | null>;
+  query: string;
+  setQuery: (v: string) => void;
+  handleKeyDown: (e: React.KeyboardEvent) => void;
+  activeQuery: string;
+  hasResults: boolean;
+  showEmpty: boolean | string;
+  debouncedQuery: string;
+  results: SearchEntry[];
+  selectedIndex: number;
+  setSelectedIndex: (i: number) => void;
+  sopResults: SopEntry[];
+  sectionResults: SectionEntry[];
+  sopOffset: number;
+  sectionOffset: number;
+  handleSelect: (entry: SearchEntry) => void;
+  onClose: () => void;
+}) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   return (
     <div
       className="fixed inset-0 z-[60] flex items-start justify-center pt-[14vh]"
@@ -319,17 +360,21 @@ export default function CommandPalette({
       aria-modal="true"
       aria-label="Command palette"
     >
-      {/* Backdrop */}
+      {/* Backdrop — instant, no animation (animating backdrop-filter is expensive + causes lag) */}
       <div
-        className="absolute inset-0 bg-black/25"
+        className="absolute inset-0 bg-black/[0.08] backdrop-blur-[2px]"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Palette container */}
+      {/* Palette container — only the card animates (scale + opacity) */}
       <div
         ref={modalRef}
-        className="relative w-full max-w-[680px] mx-4 bg-white rounded-2xl border border-neutral-200 shadow-lg overflow-hidden"
+        className={[
+          "relative w-full max-w-[680px] mx-4 bg-white rounded-2xl border border-neutral-200 shadow-xl overflow-hidden",
+          "transition-all duration-[140ms] ease-out",
+          visible ? "opacity-100 scale-100" : "opacity-0 scale-[0.98]",
+        ].join(" ")}
         onKeyDown={handleKeyDown}
       >
         {/* Search input row */}
@@ -444,9 +489,15 @@ export default function CommandPalette({
 
               {/* Section results group */}
               {sectionResults.length > 0 && (
-                <div className={sopResults.length > 0 ? "mt-3" : ""}>
-                  <div className="px-4 pt-2 pb-1.5">
-                    <span className="text-[10px] uppercase tracking-wider font-medium text-neutral-400">
+                <div
+                  className={
+                    sopResults.length > 0
+                      ? "mt-1 pt-2 border-t border-neutral-100"
+                      : ""
+                  }
+                >
+                  <div className="px-4 pt-1.5 pb-1.5">
+                    <span className="text-[10px] uppercase tracking-wider font-semibold text-neutral-400">
                       Matches in sections
                     </span>
                   </div>
@@ -462,30 +513,32 @@ export default function CommandPalette({
                         aria-selected={isSelected}
                         data-selected={isSelected}
                         className={[
-                          "flex items-start gap-3 mx-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors duration-100 select-none",
+                          "flex items-start gap-3 mx-2 px-3 py-2 rounded-lg cursor-pointer transition-colors duration-100 select-none",
                           isSelected ? "bg-neutral-100" : "hover:bg-neutral-50",
                         ].join(" ")}
                         onClick={() => handleSelect(entry)}
                         onMouseEnter={() => setSelectedIndex(flatIndex)}
                       >
-                        <SectionIcon label={entry.sectionLabel} />
+                        <div className="mt-[3px]">
+                          <SectionIcon label={entry.sectionLabel} />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline gap-1.5 mb-0.5 flex-wrap">
-                            <span className="text-sm font-medium text-neutral-900 truncate leading-snug">
-                              {entry.sopTitle}
-                            </span>
-                            <span className="text-neutral-300 text-xs">·</span>
-                            <span className="text-xs text-neutral-500 flex-shrink-0">
-                              {entry.sectionLabel}
-                            </span>
-                          </div>
-                          <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">
+                          {/* Primary: SOP title */}
+                          <p className="text-[13px] font-semibold text-neutral-900 truncate leading-snug">
+                            {entry.sopTitle}
+                          </p>
+                          {/* Secondary: section label */}
+                          <p className="text-[11px] text-neutral-500 leading-none mt-0.5 mb-1">
+                            {entry.sectionLabel}
+                          </p>
+                          {/* Tertiary: snippet */}
+                          <p className="text-[12px] text-neutral-400 leading-relaxed line-clamp-2">
                             <HighlightMatch text={snippet} query={activeQuery} />
                           </p>
                         </div>
                         <ChevronRight
-                          size={12}
-                          className="text-neutral-300 flex-shrink-0 mt-0.5"
+                          size={11}
+                          className="text-neutral-300 flex-shrink-0 mt-1"
                           strokeWidth={1.5}
                         />
                       </div>
@@ -499,25 +552,21 @@ export default function CommandPalette({
 
         {/* Footer hints */}
         {hasResults && (
-          <div className="px-4 py-2 border-t border-neutral-100 flex items-center gap-4">
-            <span className="text-[10px] text-neutral-400 flex items-center gap-1">
-              <kbd className="px-1 py-px bg-neutral-100 rounded text-[10px] font-mono">
-                ↵
-              </kbd>
-              select
-            </span>
-            <span className="text-[10px] text-neutral-400 flex items-center gap-1">
-              <kbd className="px-1 py-px bg-neutral-100 rounded text-[10px] font-mono">
-                ↑↓
-              </kbd>
-              navigate
-            </span>
-            <span className="text-[10px] text-neutral-400 flex items-center gap-1">
-              <kbd className="px-1 py-px bg-neutral-100 rounded text-[10px] font-mono">
-                esc
-              </kbd>
-              close
-            </span>
+          <div className="px-4 py-2.5 border-t border-neutral-100 flex items-center gap-5">
+            {(
+              [
+                { key: "↵", label: "select" },
+                { key: "↑↓", label: "navigate" },
+                { key: "esc", label: "close" },
+              ] as const
+            ).map(({ key, label }) => (
+              <span key={label} className="flex items-center gap-1.5 text-neutral-400">
+                <kbd className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 rounded text-[11px] font-mono leading-none">
+                  {key}
+                </kbd>
+                <span className="text-[11px]">{label}</span>
+              </span>
+            ))}
           </div>
         )}
       </div>
