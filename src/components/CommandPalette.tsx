@@ -173,7 +173,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
 // ─── SectionIcon ─────────────────────────────────────────────────────────────
 
 function SectionIcon({ label }: { label: string }) {
-  const cls = "text-neutral-400 flex-shrink-0 mt-px";
+  const cls = "text-text-faint flex-shrink-0 mt-px";
   if (label.startsWith("Step")) return <AlignLeft size={12} className={cls} />;
   if (label === "Edge Case") return <AlertTriangle size={12} className={cls} />;
   if (label === "Escalation") return <GitBranch size={12} className={cls} />;
@@ -393,22 +393,22 @@ function CommandPaletteInner({
       <div
         ref={modalRef}
         className={[
-          "relative w-full max-w-[680px] mx-4 bg-white rounded-2xl border border-neutral-200 shadow-xl overflow-hidden",
+          "relative w-full max-w-[680px] mx-4 bg-background rounded-2xl border border-border shadow-xl overflow-hidden",
           "transition-all duration-[140ms] ease-out",
           visible ? "opacity-100 scale-100" : "opacity-0 scale-[0.98]",
         ].join(" ")}
         onKeyDown={handleKeyDown}
       >
         {/* Search input row */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-neutral-100">
-          <Search size={15} className="text-neutral-400 flex-shrink-0" strokeWidth={1.75} />
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border-muted">
+          <Search size={15} className="text-text-faint flex-shrink-0" strokeWidth={1.75} />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="What do you need help with?"
-            className="flex-1 text-sm text-neutral-900 placeholder:text-neutral-400 bg-transparent outline-none"
+            className="flex-1 text-sm text-foreground placeholder:text-text-faint bg-transparent outline-none"
             aria-label="Search"
             aria-autocomplete="list"
             aria-controls="cp-results"
@@ -425,7 +425,7 @@ function CommandPaletteInner({
                 setQuery("");
                 inputRef.current?.focus();
               }}
-              className="p-1 text-neutral-400 hover:text-neutral-600 transition-colors rounded"
+              className="p-1 text-text-faint hover:text-text-secondary transition-colors rounded"
               aria-label="Clear"
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -448,11 +448,11 @@ function CommandPaletteInner({
           className="overflow-y-auto max-h-[440px] py-2"
         >
           {!query.trim() ? (
-            <div className="px-4 py-10 text-center text-sm text-neutral-400">
+            <div className="px-4 py-10 text-center text-sm text-text-faint">
               Type to search SOPs and sections
             </div>
           ) : showEmpty ? (
-            <div className="px-4 py-10 text-center text-sm text-neutral-400">
+            <div className="px-4 py-10 text-center text-sm text-text-faint">
               No results for &ldquo;{debouncedQuery}&rdquo;
             </div>
           ) : (
@@ -461,7 +461,7 @@ function CommandPaletteInner({
               {sopResults.length > 0 && (
                 <div>
                   <div className="px-4 pt-2 pb-1.5">
-                    <span className="text-[10px] uppercase tracking-wider font-medium text-neutral-400">
+                    <span className="text-[10px] uppercase tracking-wider font-medium text-text-faint">
                       SOPs
                     </span>
                   </div>
@@ -477,30 +477,30 @@ function CommandPaletteInner({
                         data-selected={isSelected}
                         className={[
                           "flex items-center gap-3 mx-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors duration-100 select-none",
-                          isSelected ? "bg-neutral-100" : "hover:bg-neutral-50",
+                          isSelected ? "bg-surface-2" : "hover:bg-surface",
                         ].join(" ")}
                         onClick={() => handleSelect(entry)}
                         onMouseEnter={() => setSelectedIndex(flatIndex)}
                       >
                         <FileText
                           size={14}
-                          className="text-neutral-400 flex-shrink-0"
+                          className="text-text-faint flex-shrink-0"
                           strokeWidth={1.5}
                         />
                         <div className="flex-1 min-w-0">
-                          <span className="text-sm text-neutral-900">
+                          <span className="text-sm text-foreground">
                             <HighlightMatch
                               text={entry.sopTitle}
                               query={activeQuery}
                             />
                           </span>
                         </div>
-                        <span className="text-xs text-neutral-400 flex-shrink-0">
+                        <span className="text-xs text-text-faint flex-shrink-0">
                           {entry.sopCategory}
                         </span>
                         <ChevronRight
                           size={12}
-                          className="text-neutral-300 flex-shrink-0"
+                          className="text-text-faint flex-shrink-0"
                           strokeWidth={1.5}
                         />
                       </div>
@@ -514,12 +514,12 @@ function CommandPaletteInner({
                 <div
                   className={
                     sopResults.length > 0
-                      ? "mt-1 pt-2 border-t border-neutral-100"
+                      ? "mt-1 pt-2 border-t border-border-muted"
                       : ""
                   }
                 >
                   <div className="px-4 pt-1.5 pb-1.5">
-                    <span className="text-[10px] uppercase tracking-wider font-semibold text-neutral-400">
+                    <span className="text-[10px] uppercase tracking-wider font-semibold text-text-faint">
                       Matches in sections
                     </span>
                   </div>
@@ -536,7 +536,7 @@ function CommandPaletteInner({
                         data-selected={isSelected}
                         className={[
                           "flex items-start gap-3 mx-2 px-3 py-2 rounded-lg cursor-pointer transition-colors duration-100 select-none",
-                          isSelected ? "bg-neutral-100" : "hover:bg-neutral-50",
+                          isSelected ? "bg-surface-2" : "hover:bg-surface",
                         ].join(" ")}
                         onClick={() => handleSelect(entry)}
                         onMouseEnter={() => setSelectedIndex(flatIndex)}
@@ -546,21 +546,21 @@ function CommandPaletteInner({
                         </div>
                         <div className="flex-1 min-w-0">
                           {/* Primary: SOP title */}
-                          <p className="text-[13px] font-semibold text-neutral-900 truncate leading-snug">
+                          <p className="text-[13px] font-semibold text-foreground truncate leading-snug">
                             {entry.sopTitle}
                           </p>
                           {/* Secondary: section label */}
-                          <p className="text-[11px] text-neutral-500 leading-none mt-0.5 mb-1">
+                          <p className="text-[11px] text-text-muted leading-none mt-0.5 mb-1">
                             {entry.sectionLabel}
                           </p>
                           {/* Tertiary: snippet */}
-                          <p className="text-[12px] text-neutral-400 leading-relaxed line-clamp-2">
+                          <p className="text-[12px] text-text-faint leading-relaxed line-clamp-2">
                             <HighlightMatch text={snippet} query={activeQuery} />
                           </p>
                         </div>
                         <ChevronRight
                           size={11}
-                          className="text-neutral-300 flex-shrink-0 mt-1"
+                          className="text-text-faint flex-shrink-0 mt-1"
                           strokeWidth={1.5}
                         />
                       </div>
@@ -574,7 +574,7 @@ function CommandPaletteInner({
 
         {/* Footer hints */}
         {hasResults && (
-          <div className="px-4 py-2.5 border-t border-neutral-100 flex items-center gap-5">
+          <div className="px-4 py-2.5 border-t border-border-muted flex items-center gap-5">
             {(
               [
                 { key: "↵", label: "select" },
@@ -582,8 +582,8 @@ function CommandPaletteInner({
                 { key: "esc", label: "close" },
               ] as const
             ).map(({ key, label }) => (
-              <span key={label} className="flex items-center gap-1.5 text-neutral-400">
-                <kbd className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 rounded text-[11px] font-mono leading-none">
+              <span key={label} className="flex items-center gap-1.5 text-text-faint">
+                <kbd className="px-1.5 py-0.5 bg-surface-2 border border-border rounded text-[11px] font-mono leading-none">
                   {key}
                 </kbd>
                 <span className="text-[11px]">{label}</span>

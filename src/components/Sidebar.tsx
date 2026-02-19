@@ -61,8 +61,8 @@ const SopListItem = React.memo(function SopListItem({
       className={[
         "group relative flex items-center pl-4 pr-3 py-2 rounded-lg cursor-pointer transition-all duration-150 select-none",
         isSelected
-          ? "bg-neutral-100"
-          : "hover:bg-neutral-100 active:bg-neutral-100",
+          ? "bg-surface-2"
+          : "hover:bg-surface-2 active:bg-surface-2",
       ].join(" ")}
       onClick={onSelect}
       onKeyDown={(e) => e.key === "Enter" && onSelect()}
@@ -70,7 +70,7 @@ const SopListItem = React.memo(function SopListItem({
       <div className="flex-1 min-w-0 pr-6">
         <div
           className={[
-            "text-[13px] leading-snug truncate text-neutral-800",
+            "text-[13px] leading-snug truncate text-foreground",
             isSelected ? "font-medium" : "",
           ].join(" ")}
         >
@@ -79,12 +79,12 @@ const SopListItem = React.memo(function SopListItem({
         {(urgencyPill || freqPill) && (
           <div className="flex items-center gap-1 mt-[3px]">
             {urgencyPill && (
-              <span className="text-[11px] text-neutral-500 leading-none">
+              <span className="text-[11px] text-text-muted leading-none">
                 {urgencyPill}
               </span>
             )}
             {freqPill && (
-              <span className="text-[11px] text-neutral-500 leading-none">
+              <span className="text-[11px] text-text-muted leading-none">
                 {freqPill}
               </span>
             )}
@@ -97,7 +97,7 @@ const SopListItem = React.memo(function SopListItem({
           "absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded transition-all duration-150",
           isPinned
             ? "text-amber-400 opacity-100"
-            : "text-neutral-300 opacity-0 group-hover:opacity-100 hover:text-neutral-500",
+            : "text-text-faint opacity-0 group-hover:opacity-100 hover:text-text-muted",
         ].join(" ")}
         onClick={(e) => { e.stopPropagation(); onTogglePin(); }}
         aria-label={isPinned ? "Unpin" : "Pin"}
@@ -163,13 +163,13 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
   // ── Expanded sidebar ───────────────────────────────────────────────────────
   if (sidebarOpen) {
     return (
-      <div className="w-[268px] bg-white border-r border-neutral-100 flex flex-col flex-shrink-0 transition-all duration-200 ease-out">
+      <div className="w-[268px] bg-background border-r border-border-muted flex flex-col flex-shrink-0 transition-all duration-200 ease-out">
         {/* Header */}
-        <div className="h-16 flex items-center px-4 border-b border-neutral-100 flex-shrink-0">
-          <span className="flex-1 text-[15px] font-semibold text-neutral-900 tracking-tight">Playbook</span>
+        <div className="h-16 flex items-center px-4 border-b border-border-muted flex-shrink-0">
+          <span className="flex-1 text-[15px] font-semibold text-foreground tracking-tight">Playbook</span>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 hover:shadow-sm active:bg-neutral-200 rounded-md transition-all duration-150"
+            className="p-2 text-text-muted hover:text-foreground hover:bg-surface-2 hover:shadow-sm active:bg-surface-3 rounded-md transition-all duration-150"
             aria-label="Collapse sidebar"
           >
             <Menu size={18} />
@@ -190,14 +190,14 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
                   className={[
                     "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150",
                     isActive
-                      ? "bg-neutral-100 text-neutral-900 shadow-sm"
-                      : "text-neutral-600 hover:bg-neutral-50 hover:shadow-sm active:bg-neutral-100",
+                      ? "bg-surface-2 text-foreground shadow-sm"
+                      : "text-text-secondary hover:bg-surface hover:shadow-sm active:bg-surface-2",
                   ].join(" ")}
                 >
                   <Icon
                     size={14}
                     strokeWidth={1.75}
-                    className={isActive ? "text-neutral-700" : "text-neutral-400"}
+                    className={isActive ? "text-foreground" : "text-text-faint"}
                   />
                   <span className="flex-1 text-left">{label}</span>
                   {count != null && (
@@ -209,7 +209,7 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
           </nav>
 
           {/* Divider */}
-          <div className="border-t border-neutral-100 mx-3 my-1" />
+          <div className="border-t border-border-muted mx-3 my-1" />
 
           {/* Category views */}
           <nav className="px-3 pt-1 pb-2">
@@ -224,14 +224,14 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
                   className={[
                     "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[13px] transition-all duration-150",
                     isActive
-                      ? "bg-neutral-100 text-neutral-900 font-semibold"
-                      : "font-medium text-neutral-600 hover:bg-neutral-100 active:bg-neutral-100",
+                      ? "bg-surface-2 text-foreground font-semibold"
+                      : "font-medium text-text-secondary hover:bg-surface-2 active:bg-surface-2",
                   ].join(" ")}
                 >
                   <Icon
                     size={14}
                     strokeWidth={1.75}
-                    className={isActive ? "text-neutral-700" : "text-neutral-400"}
+                    className={isActive ? "text-foreground" : "text-text-faint"}
                   />
                   <span className="flex-1 text-left">{label}</span>
                   {count != null && (
@@ -243,22 +243,22 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
           </nav>
 
           {/* Divider */}
-          <div className="border-t border-neutral-100 mx-3 my-1" />
+          <div className="border-t border-border-muted mx-3 my-1" />
 
           {/* SOP list */}
           <div className="px-3 pb-4 pt-1">
             {activeView === "home" ? (
               <div className="py-8 text-center">
-                <p className="text-sm text-neutral-500">Pick a view or search to get started</p>
+                <p className="text-sm text-text-muted">Pick a view or search to get started</p>
               </div>
             ) : activeView === "pinned" && pinnedIds.size === 0 ? (
               <div className="py-8 flex flex-col items-center gap-2">
-                <Star size={20} className="text-neutral-300" strokeWidth={1.5} />
-                <p className="text-sm text-neutral-500">Pin SOPs for quick access</p>
+                <Star size={20} className="text-text-faint" strokeWidth={1.5} />
+                <p className="text-sm text-text-muted">Pin SOPs for quick access</p>
               </div>
             ) : viewSOPs.length === 0 && searchQuery.trim() ? (
               <div className="py-8 text-center">
-                <p className="text-sm text-neutral-500">No results for &ldquo;{searchQuery}&rdquo;</p>
+                <p className="text-sm text-text-muted">No results for &ldquo;{searchQuery}&rdquo;</p>
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -282,12 +282,12 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
 
   // ── Collapsed sidebar ──────────────────────────────────────────────────────
   return (
-    <div className="w-[72px] bg-white border-r border-neutral-100 flex flex-col flex-shrink-0 transition-all duration-200 ease-out">
+    <div className="w-[72px] bg-background border-r border-border-muted flex flex-col flex-shrink-0 transition-all duration-200 ease-out">
       {/* Header */}
-      <div className="h-16 flex items-center justify-center border-b border-neutral-100 flex-shrink-0">
+      <div className="h-16 flex items-center justify-center border-b border-border-muted flex-shrink-0">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 hover:shadow-sm active:bg-neutral-200 rounded-md transition-all duration-150"
+          className="p-2 text-text-muted hover:text-foreground hover:bg-surface-2 hover:shadow-sm active:bg-surface-3 rounded-md transition-all duration-150"
           aria-label="Expand sidebar"
         >
           <Menu size={18} />
@@ -305,13 +305,13 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
               className={[
                 "relative group w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-150",
                 isActive
-                  ? "bg-neutral-200 text-neutral-800 shadow-sm"
-                  : "text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200",
+                  ? "bg-surface-3 text-foreground shadow-sm"
+                  : "text-text-faint hover:bg-surface-2 hover:text-foreground active:bg-surface-3",
               ].join(" ")}
               title={label}
             >
               <Icon size={18} strokeWidth={1.75} />
-              <span className="absolute left-full ml-3 px-2 py-1 bg-neutral-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50">
+              <span className="absolute left-full ml-3 px-2 py-1 bg-foreground text-background text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50">
                 {label}
               </span>
             </button>
@@ -319,7 +319,7 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
         })}
 
         {/* Divider */}
-        <div className="w-5 border-t border-neutral-100 my-1" />
+        <div className="w-5 border-t border-border-muted my-1" />
 
         {CATEGORY_VIEW_ITEMS.map(({ id, label, icon: Icon }) => {
           const isActive = activeView === id;
@@ -330,13 +330,13 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
               className={[
                 "relative group w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-150",
                 isActive
-                  ? "bg-neutral-200 text-neutral-800 shadow-sm"
-                  : "text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 active:bg-neutral-200",
+                  ? "bg-surface-3 text-foreground shadow-sm"
+                  : "text-text-faint hover:bg-surface-2 hover:text-foreground active:bg-surface-3",
               ].join(" ")}
               title={label}
             >
               <Icon size={18} strokeWidth={1.75} />
-              <span className="absolute left-full ml-3 px-2 py-1 bg-neutral-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50">
+              <span className="absolute left-full ml-3 px-2 py-1 bg-foreground text-background text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50">
                 {label}
               </span>
             </button>

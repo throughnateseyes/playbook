@@ -27,14 +27,14 @@ const ScriptBlock = React.memo(function ScriptBlock({ code }: { code: string }) 
   }, [code]);
 
   return (
-    <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50/60 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-200">
+    <div className="mt-4 rounded-lg border border-border bg-surface/60 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border">
         <span className="ty-section-label">
           Script
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-neutral-700 transition-colors"
+          className="flex items-center gap-1.5 text-[11px] text-text-muted hover:text-foreground transition-colors"
         >
           {copied ? (
             <Check size={11} strokeWidth={2} />
@@ -44,7 +44,7 @@ const ScriptBlock = React.memo(function ScriptBlock({ code }: { code: string }) 
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="px-4 py-3.5 text-[12px] font-mono text-neutral-700 leading-relaxed overflow-x-auto whitespace-pre-wrap">
+      <pre className="px-4 py-3.5 text-[12px] font-mono text-text-secondary leading-relaxed overflow-x-auto whitespace-pre-wrap">
         {code}
       </pre>
     </div>
@@ -62,14 +62,14 @@ const AttachmentsGrid = React.memo(function AttachmentsGrid({ items }: { items: 
           href={item.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 hover:border-neutral-300 transition-all duration-150"
+          className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border bg-background hover:bg-surface hover:border-border-strong transition-all duration-150"
         >
           {item.type === "image" ? (
-            <Image size={13} strokeWidth={1.5} className="flex-shrink-0 text-neutral-400" />
+            <Image size={13} strokeWidth={1.5} className="flex-shrink-0 text-text-faint" />
           ) : (
-            <FileText size={13} strokeWidth={1.5} className="flex-shrink-0 text-neutral-400" />
+            <FileText size={13} strokeWidth={1.5} className="flex-shrink-0 text-text-faint" />
           )}
-          <span className="text-[12px] text-neutral-600 truncate">
+          <span className="text-[12px] text-text-secondary truncate">
             {item.label ?? item.url}
           </span>
         </a>
@@ -105,7 +105,7 @@ const StepRow = React.memo(function StepRow({
   }, [hasContent]);
 
   return (
-    <div className="border-t border-neutral-100 first:border-0">
+    <div className="border-t border-border-muted first:border-0">
       <button
         type="button"
         onClick={handleToggle}
@@ -115,7 +115,7 @@ const StepRow = React.memo(function StepRow({
         ].join(" ")}
         aria-expanded={hasContent ? open : undefined}
       >
-        <span className="text-right text-[12px] font-medium text-neutral-400 tabular-nums leading-none pt-[2px] select-none">
+        <span className="text-right text-[12px] font-medium text-text-faint tabular-nums leading-none pt-[2px] select-none">
           {index + 1}
         </span>
         <span className="ty-list-title">
@@ -126,7 +126,7 @@ const StepRow = React.memo(function StepRow({
             size={14}
             strokeWidth={2}
             className={[
-              "text-neutral-400 group-hover:text-neutral-500 transition-transform duration-200 ease-out mt-[2px]",
+              "text-text-faint group-hover:text-text-muted transition-transform duration-200 ease-out mt-[2px]",
               open ? "rotate-180" : "",
             ].join(" ")}
           />
@@ -182,7 +182,7 @@ const SopDetail = React.memo(function SopDetail({
           <div className="flex items-center gap-0.5 flex-shrink-0 pt-0.5">
             <button
               onClick={onTogglePin}
-              className="p-2 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:shadow-sm active:bg-neutral-200 hover:text-neutral-700 transition-all duration-150"
+              className="p-2 rounded-lg text-text-faint hover:bg-surface-2 hover:shadow-sm active:bg-surface-3 hover:text-foreground transition-all duration-150"
               aria-label={isPinned ? "Unpin" : "Pin"}
             >
               <Star
@@ -194,7 +194,7 @@ const SopDetail = React.memo(function SopDetail({
             </button>
             <button
               onClick={onEdit}
-              className="p-2 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:shadow-sm active:bg-neutral-200 hover:text-neutral-700 transition-all duration-150"
+              className="p-2 rounded-lg text-text-faint hover:bg-surface-2 hover:shadow-sm active:bg-surface-3 hover:text-foreground transition-all duration-150"
               aria-label="Edit"
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -216,7 +216,7 @@ const SopDetail = React.memo(function SopDetail({
 
       {/* ── Overview ───────────────────────────────────────────────────────── */}
       {sop.overview && (
-        <section className="border-t border-neutral-100 pt-6 pb-8">
+        <section className="border-t border-border-muted pt-6 pb-8">
           <SectionLabel>Overview</SectionLabel>
           <p className="ty-body">
             {highlightText(sop.overview)}
@@ -226,7 +226,7 @@ const SopDetail = React.memo(function SopDetail({
 
       {/* ── Steps ──────────────────────────────────────────────────────────── */}
       {sop.steps.length > 0 && (
-        <section className="border-t border-neutral-100 pt-6 pb-8">
+        <section className="border-t border-border-muted pt-6 pb-8">
           <SectionLabel>Steps</SectionLabel>
           <div>
             {sop.steps.map((step, i) => (
@@ -238,7 +238,7 @@ const SopDetail = React.memo(function SopDetail({
 
       {/* ── Edge Cases ─────────────────────────────────────────────────────── */}
       {sop.edgeCases.length > 0 && (
-        <section className="border-t border-neutral-100 pt-6 pb-8">
+        <section className="border-t border-border-muted pt-6 pb-8">
           <SectionLabel>Edge Cases</SectionLabel>
           <div className="space-y-6">
             {sop.edgeCases.map((ec, i) => (
@@ -257,7 +257,7 @@ const SopDetail = React.memo(function SopDetail({
 
       {/* ── Escalation ─────────────────────────────────────────────────────── */}
       {(sop.escalation.when || sop.escalation.contact) && (
-        <section className="border-t border-neutral-100 pt-6 pb-8">
+        <section className="border-t border-border-muted pt-6 pb-8">
           <SectionLabel>Escalation</SectionLabel>
           <div className="space-y-5">
             {sop.escalation.when && (
@@ -286,12 +286,12 @@ const SopDetail = React.memo(function SopDetail({
 
       {/* ── Contacts ───────────────────────────────────────────────────────── */}
       {sop.contacts.length > 0 && (
-        <section className="border-t border-neutral-100 pt-6 pb-8">
+        <section className="border-t border-border-muted pt-6 pb-8">
           <SectionLabel>Contacts</SectionLabel>
-          <div className="divide-y divide-neutral-100">
+          <div className="divide-y divide-border-muted">
             {sop.contacts.map((c, i) => (
               <div key={i} className="flex items-start gap-4 py-3 first:pt-0 last:pb-0">
-                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-neutral-100 text-neutral-500 text-[11px] font-semibold flex items-center justify-center">
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-surface-2 text-text-muted text-[11px] font-semibold flex items-center justify-center">
                   {c.name
                     .split(" ")
                     .filter(Boolean)
@@ -301,12 +301,12 @@ const SopDetail = React.memo(function SopDetail({
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2 mb-0.5 flex-wrap">
-                    <span className="text-[15px] font-semibold text-neutral-900">
+                    <span className="text-[15px] font-semibold text-foreground">
                       {highlightText(c.name)}
                     </span>
-                    <span className="text-[12px] text-neutral-500">{c.label}</span>
+                    <span className="text-[12px] text-text-muted">{c.label}</span>
                     {c.team && (
-                      <span className="text-[11px] text-neutral-500">· {c.team}</span>
+                      <span className="text-[11px] text-text-muted">· {c.team}</span>
                     )}
                   </div>
                   <p className="ty-secondary">
@@ -321,13 +321,13 @@ const SopDetail = React.memo(function SopDetail({
 
       {/* ── Reference Materials ────────────────────────────────────────────── */}
       {sop.photos.length > 0 && (
-        <section className="border-t border-neutral-100 pt-6 pb-8">
+        <section className="border-t border-border-muted pt-6 pb-8">
           <SectionLabel>Reference Materials</SectionLabel>
           <div className="grid grid-cols-3 gap-3">
             {sop.photos.map((photo, i) => (
               <div
                 key={i}
-                className="aspect-video bg-neutral-50 rounded-lg border border-neutral-200 flex items-center justify-center p-4 text-center hover:bg-neutral-100/80 transition-colors cursor-pointer"
+                className="aspect-video bg-surface rounded-lg border border-border flex items-center justify-center p-4 text-center hover:bg-surface-2/80 transition-colors cursor-pointer"
               >
                 <span className="ty-secondary font-medium">
                   {highlightText(photo)}

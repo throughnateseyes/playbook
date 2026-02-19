@@ -5,6 +5,7 @@ import type { SOP, Contact } from '../types';
 import Sidebar from '../components/Sidebar';
 import CommandPalette from '../components/CommandPalette';
 import SopDetail from '../components/SopDetail';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 const INITIAL_SOPS: SOP[] = [
   {
@@ -221,7 +222,7 @@ const AskAISection = React.memo(function AskAISection({ selectedSOP }: { selecte
   };
 
   return (
-    <section className="border-t border-neutral-100 pt-6 pb-8">
+    <section className="border-t border-border-muted pt-6 pb-8">
       <p className="ty-section-label mb-5">
         Ask About This Procedure
       </p>
@@ -233,27 +234,27 @@ const AskAISection = React.memo(function AskAISection({ selectedSOP }: { selecte
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
-          className="flex-1 px-4 py-2.5 rounded-xl border border-neutral-200 bg-white text-[14px] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-transparent transition-shadow"
+          className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-[14px] text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
         />
         <button
           onClick={handleAskAI}
           disabled={!question.trim()}
-          className="px-4 py-2.5 bg-neutral-900 text-white text-[13px] font-medium rounded-xl hover:bg-neutral-700 active:bg-neutral-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2.5 bg-foreground text-background text-[13px] font-medium rounded-xl hover:bg-foreground/80 active:bg-foreground/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           Ask
         </button>
       </div>
 
       {isThinking && (
-        <div className="flex items-center gap-2 text-[13px] text-neutral-400">
-          <div className="w-3.5 h-3.5 border-[1.5px] border-neutral-400 border-t-transparent rounded-full animate-spin"></div>
+        <div className="flex items-center gap-2 text-[13px] text-text-faint">
+          <div className="w-3.5 h-3.5 border-[1.5px] border-text-faint border-t-transparent rounded-full animate-spin"></div>
           <span>Thinking...</span>
         </div>
       )}
 
       {aiResponse && (
-        <div className="mt-3 px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl">
-          <p className="text-[13px] text-neutral-700 leading-relaxed">
+        <div className="mt-3 px-4 py-3.5 bg-surface border border-border rounded-xl">
+          <p className="text-[13px] text-text-secondary leading-relaxed">
             {aiResponse}
           </p>
         </div>
@@ -490,7 +491,7 @@ export default function Home() {
     const parts = text.split(searchRegex);
     return parts.map((part, index) =>
       searchRegex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 text-gray-900 rounded px-0.5" data-match="true">
+        <mark key={index} className="bg-yellow-200 text-foreground rounded px-0.5" data-match="true">
           {part}
         </mark>
       ) : part
@@ -624,7 +625,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans antialiased">
+    <div className="flex h-screen bg-surface font-sans antialiased">
       <Sidebar
         sops={sops}
         selectedSOP={selectedSOP}
@@ -635,11 +636,11 @@ export default function Home() {
       />
 
       <div className="flex-1 flex flex-col">
-        <div className="bg-white border-b border-neutral-200 px-6 py-3 flex items-center justify-between h-16">
+        <div className="bg-background border-b border-border px-6 py-3 flex items-center h-16">
           <div className="flex-1 max-w-md">
             <div className="relative">
               <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-faint"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
@@ -656,7 +657,7 @@ export default function Home() {
                 readOnly
                 onClick={() => setCommandPaletteOpen(true)}
                 onKeyDown={handleSearchKeyDown}
-                className="w-full pl-10 pr-24 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow cursor-pointer select-none"
+                className="w-full pl-10 pr-24 py-2 bg-surface border border-border-strong rounded-xl text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow cursor-pointer select-none"
               />
 
               {/* ⌘K hint — only when no active search and no match counter */}
@@ -671,7 +672,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 transition-colors rounded"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-faint hover:text-text-secondary transition-colors rounded"
                   aria-label="Clear search"
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -687,7 +688,7 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => setSearchQuery("")}
-                      className="p-1 text-neutral-400 hover:text-neutral-600 transition-colors rounded"
+                      className="p-1 text-text-faint hover:text-text-secondary transition-colors rounded"
                       aria-label="Clear search"
                     >
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -695,17 +696,17 @@ export default function Home() {
                       </svg>
                     </button>
                   )}
-                  <span className="text-xs text-gray-600 font-medium">
+                  <span className="text-xs text-text-secondary font-medium">
                     {currentMatchIndex + 1} of {totalMatches}
                   </span>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => scrollToMatch(currentMatchIndex - 1)}
-                      className="p-1 hover:bg-gray-100 active:bg-gray-200 rounded transition-colors"
+                      className="p-1 hover:bg-surface-2 active:bg-surface-3 rounded transition-colors"
                       title="Previous match (Shift+Enter)"
                     >
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-gray-600">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-text-secondary">
                         <path d="M6 9L3 6l3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </button>
@@ -713,10 +714,10 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => scrollToMatch(currentMatchIndex + 1)}
-                      className="p-1 hover:bg-gray-100 active:bg-gray-200 rounded transition-colors"
+                      className="p-1 hover:bg-surface-2 active:bg-surface-3 rounded transition-colors"
                       title="Next match (Cmd/Ctrl+Enter)"
                     >
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-gray-600">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-text-secondary">
                         <path d="M6 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </button>
@@ -726,20 +727,23 @@ export default function Home() {
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              setIsEditMode(false);
-              setEditingSOP(null);
-              resetForm();
-              setShowAddPanel(true);
-            }}
-            className="px-4 py-2 text-neutral-700 text-sm font-medium rounded-lg hover:bg-neutral-100 hover:shadow-sm active:bg-neutral-200 transition-all duration-150 flex items-center gap-2"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            Add SOP
-          </button>
+          <div className="ml-auto flex items-center gap-3">
+            <button
+              onClick={() => {
+                setIsEditMode(false);
+                setEditingSOP(null);
+                resetForm();
+                setShowAddPanel(true);
+              }}
+              className="px-4 py-2 text-text-secondary text-sm font-medium rounded-lg hover:bg-surface-2 hover:shadow-sm active:bg-surface-3 transition-all duration-150 flex items-center gap-2"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              Add SOP
+            </button>
+            <ThemeToggle />
+          </div>
         </div>
 
         <div ref={detailContainerRef} className="flex-1 overflow-y-auto">
@@ -757,11 +761,11 @@ export default function Home() {
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-16 h-16 text-text-faint mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <h3 className="text-[17px] font-semibold text-neutral-900 mb-1 tracking-tight">Select a procedure</h3>
-                <p className="text-sm text-neutral-600">Choose an SOP from the sidebar to view details</p>
+                <h3 className="text-[17px] font-semibold text-foreground mb-1 tracking-tight">Select a procedure</h3>
+                <p className="text-sm text-text-secondary">Choose an SOP from the sidebar to view details</p>
               </div>
             </div>
           )}
@@ -788,14 +792,14 @@ export default function Home() {
             }}
           ></div>
 
-          <div className="fixed top-0 right-0 bottom-0 w-full max-w-2xl bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-out flex flex-col">
-            <div className="flex-shrink-0 px-8 py-6 border-b border-gray-200 bg-white">
+          <div className="fixed top-0 right-0 bottom-0 w-full max-w-2xl bg-background shadow-2xl z-50 transform transition-transform duration-300 ease-out flex flex-col">
+            <div className="flex-shrink-0 px-8 py-6 border-b border-border bg-background">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h2 className="text-2xl font-semibold text-gray-900 tracking-tight mb-2">
+                  <h2 className="text-2xl font-semibold text-foreground tracking-tight mb-2">
                     {isEditMode ? 'Edit SOP' : 'Create New SOP'}
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-text-secondary">
                     {isEditMode
                       ? 'Update this standard operating procedure'
                       : 'Define a new standard operating procedure for your team'}
@@ -808,10 +812,10 @@ export default function Home() {
                     setEditingSOP(null);
                     resetForm();
                   }}
-                  className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors ml-4"
+                  className="p-2 hover:bg-surface-2 active:bg-surface-3 rounded-lg transition-colors ml-4"
                   aria-label="Close panel"
                 >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-gray-600">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-text-secondary">
                     <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 </button>
@@ -821,32 +825,32 @@ export default function Home() {
             <div className="flex-1 overflow-y-auto px-8 py-8">
               <div className="space-y-8">
                 <section>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-6 tracking-tight flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-foreground mb-6 tracking-tight flex items-center gap-2">
                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">1</span>
                     Basic Information
                   </h3>
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Title <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-2.5 rounded-xl border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                         placeholder="Enter SOP title"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Category <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-2.5 rounded-xl border border-border-strong text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                       >
                         {CATEGORIES.map(cat => (
                           <option key={cat} value={cat}>{cat}</option>
@@ -855,35 +859,35 @@ export default function Home() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Tags</label>
+                      <label className="block text-sm font-medium text-foreground mb-2">Tags</label>
                       <input
                         type="text"
                         value={formData.tags}
                         onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-2.5 rounded-xl border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                         placeholder="e.g., Urgent, After-Hours"
                       />
-                      <p className="mt-2 text-xs text-gray-500">Separate multiple tags with commas</p>
+                      <p className="mt-2 text-xs text-text-muted">Separate multiple tags with commas</p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Overview</label>
+                      <label className="block text-sm font-medium text-foreground mb-2">Overview</label>
                       <textarea
                         value={formData.overview}
                         onChange={(e) => setFormData({ ...formData, overview: e.target.value })}
                         rows={3}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-2.5 rounded-xl border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                         placeholder="Brief overview of this procedure"
                       />
                     </div>
                   </div>
                 </section>
 
-                <div className="border-t border-gray-200"></div>
+                <div className="border-t border-border"></div>
 
                 <section>
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 tracking-tight flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-foreground tracking-tight flex items-center gap-2">
                       <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">2</span>
                       Steps
                     </h3>
@@ -897,7 +901,7 @@ export default function Home() {
                   </div>
                   <div className="space-y-4">
                     {formData.steps.map((step, index) => (
-                      <div key={index} className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                      <div key={index} className="bg-surface border border-border rounded-xl p-4">
                         <div className="flex items-start gap-3">
                           <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold">
                             {index + 1}
@@ -906,7 +910,7 @@ export default function Home() {
                             value={step}
                             onChange={(e) => updateStep(index, e.target.value)}
                             rows={2}
-                            className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            className="flex-1 px-3 py-2 rounded-lg border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                             placeholder="Describe this step"
                           />
                           <div className="flex flex-col gap-1">
@@ -914,10 +918,10 @@ export default function Home() {
                               type="button"
                               onClick={() => moveStep(index, 'up')}
                               disabled={index === 0}
-                              className="p-1 hover:bg-gray-200 active:bg-gray-300 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              className="p-1 hover:bg-surface-3 active:bg-surface-3 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                               title="Move up"
                             >
-                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-gray-600">
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-text-secondary">
                                 <path d="M8 12V4M4 8l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                             </button>
@@ -925,10 +929,10 @@ export default function Home() {
                               type="button"
                               onClick={() => moveStep(index, 'down')}
                               disabled={index === formData.steps.length - 1}
-                              className="p-1 hover:bg-gray-200 active:bg-gray-300 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              className="p-1 hover:bg-surface-3 active:bg-surface-3 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                               title="Move down"
                             >
-                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-gray-600">
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-text-secondary">
                                 <path d="M8 4v8M12 8l-4 4-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                             </button>
@@ -950,11 +954,11 @@ export default function Home() {
                   </div>
                 </section>
 
-                <div className="border-t border-gray-200"></div>
+                <div className="border-t border-border"></div>
 
                 <section>
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 tracking-tight flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-foreground tracking-tight flex items-center gap-2">
                       <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">3</span>
                       Edge Cases
                     </h3>
@@ -974,7 +978,7 @@ export default function Home() {
                             type="text"
                             value={edge.title}
                             onChange={(e) => updateEdgeCase(index, 'title', e.target.value)}
-                            className="flex-1 px-3 py-2 rounded-lg border border-amber-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                            className="flex-1 px-3 py-2 rounded-lg border border-amber-300 text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-amber-500 bg-background"
                             placeholder="Edge case title"
                           />
                           <button
@@ -992,7 +996,7 @@ export default function Home() {
                           value={edge.description}
                           onChange={(e) => updateEdgeCase(index, 'description', e.target.value)}
                           rows={2}
-                          className="w-full px-3 py-2 rounded-lg border border-amber-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                          className="w-full px-3 py-2 rounded-lg border border-amber-300 text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-amber-500 bg-background"
                           placeholder="Description"
                         />
                       </div>
@@ -1000,42 +1004,42 @@ export default function Home() {
                   </div>
                 </section>
 
-                <div className="border-t border-gray-200"></div>
+                <div className="border-t border-border"></div>
 
                 <section>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-6 tracking-tight flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-foreground mb-6 tracking-tight flex items-center gap-2">
                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-700 text-xs font-bold">4</span>
                     Escalation
                   </h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">When to Escalate</label>
+                      <label className="block text-sm font-medium text-foreground mb-2">When to Escalate</label>
                       <textarea
                         value={formData.escalationWhen}
                         onChange={(e) => setFormData({ ...formData, escalationWhen: e.target.value })}
                         rows={2}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-2.5 rounded-xl border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                         placeholder="Describe escalation criteria"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Primary Contact</label>
+                      <label className="block text-sm font-medium text-foreground mb-2">Primary Contact</label>
                       <input
                         type="text"
                         value={formData.escalationContact}
                         onChange={(e) => setFormData({ ...formData, escalationContact: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-2.5 rounded-xl border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                         placeholder="Contact name and phone"
                       />
                     </div>
                   </div>
                 </section>
 
-                <div className="border-t border-gray-200"></div>
+                <div className="border-t border-border"></div>
 
                 <section>
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 tracking-tight flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-foreground tracking-tight flex items-center gap-2">
                       <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">5</span>
                       Additional Contacts
                     </h3>
@@ -1049,21 +1053,21 @@ export default function Home() {
                   </div>
                   <div className="space-y-4">
                     {formData.contacts.map((contact, index) => (
-                      <div key={index} className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                      <div key={index} className="bg-surface border border-border rounded-xl p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1 grid grid-cols-2 gap-3">
                             <input
                               type="text"
                               value={contact.name}
                               onChange={(e) => updateContact(index, 'name', e.target.value)}
-                              className="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                              className="px-3 py-2 rounded-lg border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                               placeholder="Name"
                             />
                             <input
                               type="text"
                               value={contact.label}
                               onChange={(e) => updateContact(index, 'label', e.target.value)}
-                              className="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                              className="px-3 py-2 rounded-lg border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                               placeholder="Role/Label"
                             />
                           </div>
@@ -1083,7 +1087,7 @@ export default function Home() {
                             type="text"
                             value={contact.team}
                             onChange={(e) => updateContact(index, 'team', e.target.value)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            className="px-3 py-2 rounded-lg border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                             placeholder="Team"
                           />
                         </div>
@@ -1091,7 +1095,7 @@ export default function Home() {
                           value={contact.reason}
                           onChange={(e) => updateContact(index, 'reason', e.target.value)}
                           rows={2}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                          className="w-full px-3 py-2 rounded-lg border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                           placeholder="When to contact this person"
                         />
                       </div>
@@ -1103,8 +1107,8 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex-shrink-0 flex items-center justify-between px-8 py-4 border-t border-gray-200 bg-gray-50">
-              <p className="text-xs text-gray-500">
+            <div className="flex-shrink-0 flex items-center justify-between px-8 py-4 border-t border-border bg-surface">
+              <p className="text-xs text-text-muted">
                 <span className="text-red-500">*</span> Required fields
               </p>
               <div className="flex items-center gap-3">
@@ -1116,7 +1120,7 @@ export default function Home() {
                     setEditingSOP(null);
                     resetForm();
                   }}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                  className="px-5 py-2.5 text-sm font-medium text-text-secondary bg-background border border-border-strong rounded-xl hover:bg-surface active:bg-surface-2 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1124,7 +1128,7 @@ export default function Home() {
                   type="button"
                   onClick={handleSaveSOP}
                   disabled={!formValid}
-                  className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  className="px-5 py-2.5 text-sm font-medium text-accent-foreground bg-accent rounded-xl hover:bg-accent/90 active:bg-accent/80 disabled:bg-surface-3 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
                   {isEditMode ? 'Save Changes' : 'Save SOP'}
                 </button>
