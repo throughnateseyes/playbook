@@ -2,19 +2,14 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { User, Settings, LogOut, Sun, Moon, Monitor, Check } from "lucide-react";
-
-const THEME_OPTIONS = [
-  { value: "light", label: "Light", icon: Sun },
-  { value: "dark", label: "Dark", icon: Moon },
-  { value: "system", label: "System", icon: Monitor },
-] as const;
+import { User, Settings, LogOut, Sun, Moon } from "lucide-react";
 
 export function UserMenu() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   useEffect(() => setMounted(true), []);
 
@@ -75,26 +70,43 @@ export function UserMenu() {
             </button>
           </div>
 
-          {/* Theme selector */}
+          {/* Theme toggle */}
           <div className="border-t border-border-muted py-1">
             <div className="px-3 py-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-text-muted">
                 Theme
               </span>
             </div>
-            {mounted && THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+            {mounted && (
               <button
-                key={value}
-                onClick={() => setTheme(value)}
+                onClick={() => setTheme(isDark ? "light" : "dark")}
                 className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-foreground hover:bg-surface-2 transition-colors"
               >
-                <Icon size={14} strokeWidth={1.75} className="text-text-faint" />
-                <span className="flex-1 text-left">{label}</span>
-                {theme === value && (
-                  <Check size={14} strokeWidth={2} className="text-accent flex-shrink-0" />
-                )}
+                <span className="relative w-3.5 h-3.5">
+                  <Sun
+                    size={14}
+                    strokeWidth={1.75}
+                    className={`absolute inset-0 transition-all duration-150 ease-in-out ${
+                      isDark
+                        ? "opacity-0 rotate-90 scale-75"
+                        : "opacity-100 rotate-0 scale-100 text-text-faint"
+                    }`}
+                  />
+                  <Moon
+                    size={14}
+                    strokeWidth={1.75}
+                    className={`absolute inset-0 transition-all duration-150 ease-in-out ${
+                      isDark
+                        ? "opacity-100 rotate-0 scale-100 text-text-faint fill-pin/25"
+                        : "opacity-0 -rotate-90 scale-75"
+                    }`}
+                  />
+                </span>
+                <span className="flex-1 text-left">
+                  {isDark ? "Dark mode" : "Light mode"}
+                </span>
               </button>
-            ))}
+            )}
           </div>
 
           {/* Sign out */}

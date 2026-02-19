@@ -239,7 +239,7 @@ const SopDetail = React.memo(function SopDetail({
   return (
     <div className="pb-4">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="mb-8">
+      <div className="mb-9">
         <div className="flex items-start gap-3 mb-3">
           <h1 className="ty-title flex-1 min-w-0">
             {highlightText(sop.title)}
@@ -282,7 +282,7 @@ const SopDetail = React.memo(function SopDetail({
 
       {/* ── Overview ───────────────────────────────────────────────────────── */}
       {sop.overview && (
-        <section className="border-t border-border-muted pt-6 pb-8">
+        <section className="border-t border-border-muted pt-7 pb-9">
           <SectionLabel>Overview</SectionLabel>
           <p className="ty-body">
             {highlightText(sop.overview)}
@@ -292,7 +292,7 @@ const SopDetail = React.memo(function SopDetail({
 
       {/* ── Steps ──────────────────────────────────────────────────────────── */}
       {sop.steps.length > 0 && (
-        <section className="border-t border-border-muted pt-6 pb-8">
+        <section className="border-t border-border-muted pt-7 pb-9">
           <SectionLabel>Steps</SectionLabel>
           <div>
             {sop.steps.map((step, i) => (
@@ -304,7 +304,7 @@ const SopDetail = React.memo(function SopDetail({
 
       {/* ── Edge Cases + Escalation — 2-column layout ────────────────── */}
       {(sop.edgeCases.length > 0 || sop.escalation.when || sop.escalation.contact) && (
-        <section className="border-t border-border-muted pt-6 pb-8">
+        <section className="border-t border-border-muted pt-7 pb-9">
           <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8">
             {/* ── Left column: Edge Cases ─────────────────────────────────── */}
             {sop.edgeCases.length > 0 && (
@@ -371,7 +371,7 @@ const SopDetail = React.memo(function SopDetail({
 
       {/* ── Contacts ─────────────────────────────────────────────────────── */}
       {sop.contacts.length > 0 && (
-        <section className="border-t border-border-muted pt-6 pb-8">
+        <section className="border-t border-border-muted pt-7 pb-9">
           <SectionLabel>Contacts</SectionLabel>
           <div className="rounded-xl border border-border bg-surface overflow-hidden">
             {sop.contacts.map((c, i) => (
@@ -438,7 +438,7 @@ const SopDetail = React.memo(function SopDetail({
 
       {/* ── Reference Materials ────────────────────────────────────────────── */}
       {sop.referenceMaterials.length > 0 && (
-        <section className="border-t border-border-muted pt-6 pb-8">
+        <section className="border-t border-border-muted pt-7 pb-9">
           <SectionLabel>Reference Materials</SectionLabel>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {sop.referenceMaterials.map((ref, i) => (
