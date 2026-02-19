@@ -222,7 +222,7 @@ const AskAISection = React.memo(function AskAISection({ selectedSOP }: { selecte
 
   return (
     <section className="border-t border-neutral-100 pt-6 pb-8">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-400 mb-5">
+      <p className="ty-section-label mb-5">
         Ask About This Procedure
       </p>
 
@@ -638,15 +638,42 @@ export default function Home() {
                 className="w-full pl-10 pr-24 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm text-gray-900 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow cursor-pointer select-none"
               />
 
-              {/* ⌘K hint — only when no match counter is showing */}
-              {!(selectedSOP && debouncedSearchQuery.trim() && totalMatches > 0) && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-neutral-400 pointer-events-none select-none font-mono">
+              {/* ⌘K hint — only when no active search and no match counter */}
+              {!searchQuery && !(selectedSOP && debouncedSearchQuery.trim() && totalMatches > 0) && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 ty-micro pointer-events-none select-none font-mono">
                   ⌘K
                 </span>
               )}
 
+              {/* X clear button — active search query, no match counter */}
+              {searchQuery && !(selectedSOP && debouncedSearchQuery.trim() && totalMatches > 0) && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 transition-colors rounded"
+                  aria-label="Clear search"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M9.5 2.5l-7 7M2.5 2.5l7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Match counter — with X prepended when searchQuery is set */}
               {selectedSOP && debouncedSearchQuery.trim() && totalMatches > 0 && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="p-1 text-neutral-400 hover:text-neutral-600 transition-colors rounded"
+                      aria-label="Clear search"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M9.5 2.5l-7 7M2.5 2.5l7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  )}
                   <span className="text-xs text-gray-600 font-medium">
                     {currentMatchIndex + 1} of {totalMatches}
                   </span>
@@ -712,8 +739,8 @@ export default function Home() {
                 <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1 tracking-tight">Select a procedure</h3>
-                <p className="text-sm text-gray-600">Choose an SOP from the sidebar to view details</p>
+                <h3 className="text-[17px] font-semibold text-neutral-900 mb-1 tracking-tight">Select a procedure</h3>
+                <p className="text-sm text-neutral-600">Choose an SOP from the sidebar to view details</p>
               </div>
             </div>
           )}
@@ -722,15 +749,16 @@ export default function Home() {
 
       <CommandPalette
         isOpen={commandPaletteOpen}
-        onClose={() => setCommandPaletteOpen(false)}
+        onClose={() => { setCommandPaletteOpen(false); setSearchQuery(""); }}
         sops={sops}
         onSelectSOP={(sop) => {
           setSelectedSOP(sop);
           setCommandPaletteOpen(false);
+          setSearchQuery("");
         }}
         onNavigateToSection={(sopId, query) => {
-          handleNavigateToSection(sopId, query);
-          setCommandPaletteOpen(false);
+          handleNavigateToSection(sopId, query); // sets searchQuery(query) for marks
+          setCommandPaletteOpen(false);          // close palette; searchQuery kept
         }}
       />
 

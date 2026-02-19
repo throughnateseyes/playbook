@@ -277,10 +277,13 @@ export default function CommandPalette({
       if (entry.type === "sop") {
         const sop = sops.find((s) => s.id === entry.sopId);
         if (sop) onSelectSOP(sop);
+        onClose();
       } else {
+        // Don't call onClose() here — onNavigateToSection's page.tsx callback
+        // already calls setCommandPaletteOpen(false). Calling onClose() here
+        // would batch with setSearchQuery(query) and clear it before marks render.
         onNavigateToSection(entry.sopId, debouncedQuery || query);
       }
-      onClose();
     },
     [sops, onSelectSOP, onNavigateToSection, onClose, debouncedQuery, query]
   );

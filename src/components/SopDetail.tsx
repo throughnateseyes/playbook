@@ -8,7 +8,7 @@ import type { SOP, Step, StepAttachment } from "../types";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-400 mb-5">
+    <p className="ty-section-label mb-5">
       {children}
     </p>
   );
@@ -29,12 +29,12 @@ function ScriptBlock({ code }: { code: string }) {
   return (
     <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50/60 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-200">
-        <span className="text-[10px] uppercase tracking-[0.1em] text-neutral-400 font-semibold">
+        <span className="ty-section-label">
           Script
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-[11px] text-neutral-400 hover:text-neutral-600 transition-colors"
+          className="flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-neutral-700 transition-colors"
         >
           {copied ? (
             <Check size={11} strokeWidth={2} />
@@ -106,10 +106,10 @@ const StepRow = React.memo(function StepRow({
         aria-expanded={hasContent ? open : undefined}
       >
         {/* Static number badge — not independently hoverable */}
-        <span className="flex-shrink-0 w-5 h-5 rounded-full border border-neutral-200 bg-white text-[10px] font-semibold text-neutral-400 flex items-center justify-center mt-[2px]">
+        <span className="flex-shrink-0 w-5 h-5 rounded-full border border-neutral-200 bg-white text-[11px] font-semibold text-neutral-500 flex items-center justify-center mt-[2px]">
           {index + 1}
         </span>
-        <span className="flex-1 text-[14px] font-medium text-neutral-800 leading-snug">
+        <span className="ty-list-title flex-1">
           {highlightText(step.title)}
         </span>
         {hasContent && (
@@ -134,7 +134,7 @@ const StepRow = React.memo(function StepRow({
         >
           <div className="pl-9 pr-2 pb-5 space-y-4">
             {step.description && (
-              <p className="text-[13px] text-neutral-500 leading-relaxed">
+              <p className="ty-secondary">
                 {highlightText(step.description)}
               </p>
             )}
@@ -171,7 +171,7 @@ export default function SopDetail({
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="mb-8">
         <div className="flex items-start gap-3 mb-3">
-          <h1 className="flex-1 min-w-0 text-[26px] font-semibold text-neutral-900 tracking-tight leading-snug">
+          <h1 className="ty-title flex-1 min-w-0">
             {highlightText(sop.title)}
           </h1>
           {/* Icon-only action buttons */}
@@ -183,9 +183,9 @@ export default function SopDetail({
             >
               <Star
                 size={14}
-                strokeWidth={1.75}
+                strokeWidth={isPinned ? 0 : 1.75}
                 fill={isPinned ? "currentColor" : "none"}
-                className={isPinned ? "text-neutral-700" : ""}
+                className={isPinned ? "text-amber-400" : ""}
               />
             </button>
             <button
@@ -205,7 +205,7 @@ export default function SopDetail({
             </button>
           </div>
         </div>
-        <p className="text-[11px] text-neutral-400 uppercase tracking-widest">
+        <p className="ty-meta">
           {[sop.category, ...sop.tags.slice(0, 3)].filter(Boolean).join(" · ")}
         </p>
       </div>
@@ -214,7 +214,7 @@ export default function SopDetail({
       {sop.overview && (
         <section className="border-t border-neutral-100 pt-6 pb-8">
           <SectionLabel>Overview</SectionLabel>
-          <p className="text-[15px] text-neutral-700 leading-relaxed">
+          <p className="ty-body">
             {highlightText(sop.overview)}
           </p>
         </section>
@@ -239,10 +239,10 @@ export default function SopDetail({
           <div className="space-y-6">
             {sop.edgeCases.map((ec, i) => (
               <div key={i}>
-                <p className="text-[13px] font-semibold text-neutral-800 mb-1.5">
+                <p className="ty-list-title mb-1.5">
                   {highlightText(ec.title)}
                 </p>
-                <p className="text-[14px] text-neutral-600 leading-relaxed">
+                <p className="ty-secondary">
                   {highlightText(ec.description)}
                 </p>
               </div>
@@ -258,20 +258,20 @@ export default function SopDetail({
           <div className="space-y-5">
             {sop.escalation.when && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-400 mb-1.5">
+                <p className="ty-section-label mb-1.5">
                   When
                 </p>
-                <p className="text-[14px] text-neutral-700 leading-relaxed">
+                <p className="ty-body">
                   {highlightText(sop.escalation.when)}
                 </p>
               </div>
             )}
             {sop.escalation.contact && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-400 mb-1.5">
+                <p className="ty-section-label mb-1.5">
                   Contact
                 </p>
-                <p className="text-[14px] text-neutral-700 leading-relaxed">
+                <p className="ty-body">
                   {highlightText(sop.escalation.contact)}
                 </p>
               </div>
@@ -297,15 +297,15 @@ export default function SopDetail({
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2 mb-0.5 flex-wrap">
-                    <span className="text-[14px] font-semibold text-neutral-900">
+                    <span className="text-[15px] font-semibold text-neutral-900">
                       {highlightText(c.name)}
                     </span>
-                    <span className="text-[12px] text-neutral-400">{c.label}</span>
+                    <span className="text-[12px] text-neutral-500">{c.label}</span>
                     {c.team && (
-                      <span className="text-[11px] text-neutral-400">· {c.team}</span>
+                      <span className="text-[11px] text-neutral-500">· {c.team}</span>
                     )}
                   </div>
-                  <p className="text-[13px] text-neutral-500 leading-relaxed">
+                  <p className="ty-secondary">
                     {highlightText(c.reason)}
                   </p>
                 </div>
@@ -325,7 +325,7 @@ export default function SopDetail({
                 key={i}
                 className="aspect-video bg-neutral-50 rounded-lg border border-neutral-200 flex items-center justify-center p-4 text-center hover:bg-neutral-100/80 transition-colors cursor-pointer"
               >
-                <span className="text-[13px] text-neutral-600 font-medium">
+                <span className="ty-secondary font-medium">
                   {highlightText(photo)}
                 </span>
               </div>
