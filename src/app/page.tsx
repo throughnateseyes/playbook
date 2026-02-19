@@ -491,7 +491,7 @@ export default function Home() {
     const parts = text.split(searchRegex);
     return parts.map((part, index) =>
       searchRegex.test(part) ? (
-        <mark key={index} className="bg-highlight text-highlight-text rounded-sm px-1" data-match="true">
+        <mark key={index} className="bg-highlight text-highlight-text" data-match="true">
           {part}
         </mark>
       ) : part
@@ -631,6 +631,7 @@ export default function Home() {
         selectedSOP={selectedSOP}
         onSelectSOP={setSelectedSOP}
         searchQuery={searchQuery}
+        onClearSearch={() => setSearchQuery("")}
         pinnedIds={pinnedIds}
         onTogglePin={togglePin}
       />

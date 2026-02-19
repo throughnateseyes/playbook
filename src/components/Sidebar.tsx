@@ -115,11 +115,12 @@ interface SidebarProps {
   selectedSOP: SOP | null;
   onSelectSOP: (sop: SOP) => void;
   searchQuery: string;
+  onClearSearch: () => void;
   pinnedIds: Set<string>;
   onTogglePin: (id: string) => void;
 }
 
-const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, pinnedIds, onTogglePin }: SidebarProps) {
+const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, onClearSearch, pinnedIds, onTogglePin }: SidebarProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   // "all" = no category filter (show everything); "pinned" = pinned view; "category:X" = filtered
   const [activeView, setActiveView] = useState<string>("all");
@@ -132,6 +133,19 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
   }, []);
 
   const isCategorySelected = activeView.startsWith("category:");
+
+  // Derive active filter label for the SOP list header
+  const activeFilterLabel = useMemo(() => {
+    if (searchQuery.trim()) return "Search Results";
+    if (activeView === "pinned") return "Pinned";
+    if (isCategorySelected) return activeView.replace("category:", "");
+    return "All Procedures";
+  }, [activeView, isCategorySelected, searchQuery]);
+
+  const clearFilter = useCallback(() => {
+    setActiveView("all");
+    onClearSearch();
+  }, [onClearSearch]);
 
   // Category counts (unaffected by search or active view)
   const categoryCounts = useMemo(() => {
@@ -258,6 +272,19 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
 
           {/* SOP list */}
           <div className="px-3 pb-4 pt-1">
+            <div className="flex items-center justify-between px-2 pt-1 pb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-text-faint">
+                {activeFilterLabel}
+              </span>
+              {(activeView !== "all" || searchQuery.trim()) && (
+                <button
+                  onClick={clearFilter}
+                  className="text-[11px] text-text-faint hover:text-foreground transition-colors duration-150"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             {activeView === "home" ? (
               <div className="py-8 text-center">
                 <p className="text-sm text-text-muted">Pick a view or search to get started</p>
