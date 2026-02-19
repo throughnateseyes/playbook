@@ -534,7 +534,7 @@ export default function Home() {
       />
 
       <div className="flex-1 flex flex-col">
-        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between h-16 shadow-sm">
+        <div className="bg-white border-b border-neutral-200 px-6 py-3 flex items-center justify-between h-16">
           <div className="flex-1 max-w-md">
             <div className="relative">
               <svg
@@ -550,7 +550,7 @@ export default function Home() {
 
               <input
                 type="text"
-                placeholder="Search playbook..."
+                placeholder="What do you need help with?"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
@@ -597,7 +597,7 @@ export default function Home() {
               resetForm();
               setShowAddPanel(true);
             }}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm flex items-center gap-2"
+            className="px-4 py-2 text-neutral-700 text-sm font-medium rounded-lg hover:bg-neutral-100 hover:shadow-sm active:bg-neutral-200 transition-all duration-150 flex items-center gap-2"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
