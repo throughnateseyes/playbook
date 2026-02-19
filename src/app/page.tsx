@@ -444,6 +444,27 @@ export default function Home() {
     [sops]
   );
 
+  // Stable CommandPalette callbacks — prevent new references on every Home render
+  const handlePaletteClose = useCallback(() => {
+    setCommandPaletteOpen(false);
+    setSearchQuery("");
+  }, []);
+
+  const handlePaletteSelectSOP = useCallback((sop: SOP) => {
+    setSelectedSOP(sop);
+    setCommandPaletteOpen(false);
+    setSearchQuery("");
+  }, []);
+
+  const handlePaletteNavigate = useCallback((sopId: string, query: string) => {
+    handleNavigateToSection(sopId, query);
+    setCommandPaletteOpen(false);
+  }, [handleNavigateToSection]);
+
+  const handleDetailTogglePin = useCallback(() => {
+    if (selectedSOP) togglePin(selectedSOP.id);
+  }, [selectedSOP, togglePin]);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && showAddPanel) {
@@ -544,13 +565,13 @@ export default function Home() {
     }
   };
 
-  const handleEditClick = () => {
+  const handleEditClick = useCallback(() => {
     if (selectedSOP) {
       setEditingSOP(selectedSOP);
       setIsEditMode(true);
       setShowAddPanel(true);
     }
-  };
+  }, [selectedSOP]);
 
   const addStep = () => {
     setFormData({ ...formData, steps: [...formData.steps, ''] });
@@ -729,7 +750,7 @@ export default function Home() {
                 highlightText={highlightText}
                 onEdit={handleEditClick}
                 isPinned={pinnedIds.has(selectedSOP.id)}
-                onTogglePin={() => togglePin(selectedSOP.id)}
+                onTogglePin={handleDetailTogglePin}
               />
               <AskAISection selectedSOP={selectedSOP} />
             </div>
@@ -749,23 +770,16 @@ export default function Home() {
 
       <CommandPalette
         isOpen={commandPaletteOpen}
-        onClose={() => { setCommandPaletteOpen(false); setSearchQuery(""); }}
+        onClose={handlePaletteClose}
         sops={sops}
-        onSelectSOP={(sop) => {
-          setSelectedSOP(sop);
-          setCommandPaletteOpen(false);
-          setSearchQuery("");
-        }}
-        onNavigateToSection={(sopId, query) => {
-          handleNavigateToSection(sopId, query); // sets searchQuery(query) for marks
-          setCommandPaletteOpen(false);          // close palette; searchQuery kept
-        }}
+        onSelectSOP={handlePaletteSelectSOP}
+        onNavigateToSection={handlePaletteNavigate}
       />
 
       {showAddPanel && (
         <>
           <div
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300"
+            className="fixed inset-0 bg-black/25 z-40 transition-opacity duration-300"
             onClick={() => {
               setShowAddPanel(false);
               setIsEditMode(false);

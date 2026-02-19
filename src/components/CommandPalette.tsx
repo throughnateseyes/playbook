@@ -183,7 +183,7 @@ function SectionIcon({ label }: { label: string }) {
 
 // ─── CommandPalette ───────────────────────────────────────────────────────────
 
-export default function CommandPalette({
+const CommandPalette = React.memo(function CommandPalette({
   isOpen,
   onClose,
   sops,
@@ -336,7 +336,9 @@ export default function CommandPalette({
   const showEmpty = debouncedQuery.trim() && !hasResults;
 
   return <CommandPaletteInner {...{ modalRef, inputRef, listRef, query, setQuery, handleKeyDown, activeQuery, hasResults, showEmpty, debouncedQuery, results, selectedIndex, setSelectedIndex, sopResults, sectionResults, sopOffset, sectionOffset, handleSelect, onClose }} />;
-}
+});
+
+export default CommandPalette;
 
 // Separated so the enter animation runs fresh on every open (component mounts = isOpen flips to true)
 function CommandPaletteInner({
@@ -380,9 +382,9 @@ function CommandPaletteInner({
       aria-modal="true"
       aria-label="Command palette"
     >
-      {/* Backdrop — instant, no animation (animating backdrop-filter is expensive + causes lag) */}
+      {/* Backdrop — no blur: backdrop-filter forces GPU compositing on every frame */}
       <div
-        className="absolute inset-0 bg-black/[0.08] backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/[0.12]"
         onClick={onClose}
         aria-hidden="true"
       />

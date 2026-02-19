@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo, startTransition } from "react";
 import { ChevronDown, Star, Copy, Check, FileText, Image } from "lucide-react";
 import type { SOP, Step, StepAttachment } from "../types";
 
@@ -16,15 +16,15 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 // ─── ScriptBlock ──────────────────────────────────────────────────────────────
 
-function ScriptBlock({ code }: { code: string }) {
+const ScriptBlock = React.memo(function ScriptBlock({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(code).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
-  };
+  }, [code]);
 
   return (
     <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50/60 overflow-hidden">
@@ -49,11 +49,11 @@ function ScriptBlock({ code }: { code: string }) {
       </pre>
     </div>
   );
-}
+});
 
 // ─── AttachmentsGrid ──────────────────────────────────────────────────────────
 
-function AttachmentsGrid({ items }: { items: StepAttachment[] }) {
+const AttachmentsGrid = React.memo(function AttachmentsGrid({ items }: { items: StepAttachment[] }) {
   return (
     <div className="grid grid-cols-2 gap-2">
       {items.map((item, i) => (
@@ -76,7 +76,7 @@ function AttachmentsGrid({ items }: { items: StepAttachment[] }) {
       ))}
     </div>
   );
-}
+});
 
 // ─── StepRow ──────────────────────────────────────────────────────────────────
 
@@ -92,57 +92,61 @@ const StepRow = React.memo(function StepRow({
   highlightText,
 }: StepRowProps) {
   const [open, setOpen] = useState(false);
+  const [showContent, setShowContent] = useState(false);
   const hasContent = !!(step.description || step.script || step.attachments?.length);
+
+  const handleToggle = useCallback(() => {
+    if (!hasContent) return;
+    setOpen((o) => {
+      const next = !o;
+      startTransition(() => setShowContent(next));
+      return next;
+    });
+  }, [hasContent]);
 
   return (
     <div className="border-t border-neutral-100 first:border-0">
       <button
         type="button"
-        onClick={() => hasContent && setOpen((o) => !o)}
+        onClick={handleToggle}
         className={[
-          "w-full flex items-start gap-4 py-4 text-left group",
+          "w-full grid grid-cols-[28px_1fr_16px] gap-3 items-start py-4 text-left group",
           hasContent ? "cursor-pointer" : "cursor-default",
         ].join(" ")}
         aria-expanded={hasContent ? open : undefined}
       >
-        {/* Static number badge — not independently hoverable */}
-        <span className="flex-shrink-0 w-5 h-5 rounded-full border border-neutral-200 bg-white text-[11px] font-semibold text-neutral-500 flex items-center justify-center mt-[2px]">
+        <span className="text-right text-[12px] font-medium text-neutral-400 tabular-nums leading-none pt-[2px] select-none">
           {index + 1}
         </span>
-        <span className="ty-list-title flex-1">
+        <span className="ty-list-title">
           {highlightText(step.title)}
         </span>
-        {hasContent && (
+        {hasContent ? (
           <ChevronDown
-            size={13}
-            strokeWidth={1.5}
+            size={14}
+            strokeWidth={2}
             className={[
-              "flex-shrink-0 mt-0.5 text-neutral-300 group-hover:text-neutral-400 transition-transform duration-200 ease-out",
+              "text-neutral-400 group-hover:text-neutral-500 transition-transform duration-200 ease-out mt-[2px]",
               open ? "rotate-180" : "",
             ].join(" ")}
           />
+        ) : (
+          <span />
         )}
       </button>
 
-      {/* Expanded content — only rendered when content exists */}
-      {hasContent && (
-        <div
-          className={[
-            "overflow-hidden transition-all duration-200 ease-out",
-            open ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0",
-          ].join(" ")}
-        >
-          <div className="pl-9 pr-2 pb-5 space-y-4">
-            {step.description && (
-              <p className="ty-secondary">
-                {highlightText(step.description)}
-              </p>
-            )}
-            {step.script && <ScriptBlock code={step.script} />}
-            {step.attachments?.length ? (
-              <AttachmentsGrid items={step.attachments} />
-            ) : null}
-          </div>
+      {/* Expanded content — deferred mount, fully unmounted when collapsed */}
+      {showContent && hasContent && (
+        <div className="pl-10 pr-2 pb-5 space-y-4">
+          {step.description && (
+            <p className="ty-secondary">
+              {highlightText(step.description)}
+            </p>
+          )}
+          {step.script && <ScriptBlock code={step.script} />}
+          {step.attachments?.length ? (
+            <AttachmentsGrid items={step.attachments} />
+          ) : null}
         </div>
       )}
     </div>
@@ -159,7 +163,7 @@ export interface SopDetailProps {
   onTogglePin: () => void;
 }
 
-export default function SopDetail({
+const SopDetail = React.memo(function SopDetail({
   sop,
   highlightText,
   onEdit,
@@ -335,4 +339,6 @@ export default function SopDetail({
       )}
     </div>
   );
-}
+});
+
+export default SopDetail;

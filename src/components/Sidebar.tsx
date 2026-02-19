@@ -123,7 +123,7 @@ interface SidebarProps {
   onTogglePin: (id: string) => void;
 }
 
-export default function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, pinnedIds, onTogglePin }: SidebarProps) {
+const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, pinnedIds, onTogglePin }: SidebarProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeView, setActiveView] = useState<string>("all");
   const [hasMounted, setHasMounted] = useState(false);
@@ -345,4 +345,6 @@ export default function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, p
       </div>
     </div>
   );
-}
+});
+
+export default Sidebar;
