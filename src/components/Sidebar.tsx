@@ -119,9 +119,10 @@ interface SidebarProps {
   onClearSearch: () => void;
   pinnedIds: Set<string>;
   onTogglePin: (id: string) => void;
+  onHomeClick?: () => void;
 }
 
-const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, onClearSearch, pinnedIds, onTogglePin }: SidebarProps) {
+const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, onClearSearch, pinnedIds, onTogglePin, onHomeClick }: SidebarProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   // "all" = no category filter (show everything); "pinned" = pinned view; "category:X" = filtered
   const [activeView, setActiveView] = useState<string>("all");
@@ -205,7 +206,10 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
               return (
                 <button
                   key={id}
-                  onClick={() => setActiveView(id)}
+                  onClick={() => {
+                    if (id === "home" && onHomeClick) { onHomeClick(); return; }
+                    setActiveView(id);
+                  }}
                   className={[
                     "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150",
                     isActive
@@ -347,7 +351,10 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
           return (
             <button
               key={id}
-              onClick={() => activateView(id)}
+              onClick={() => {
+                if (id === "home" && onHomeClick) { onHomeClick(); return; }
+                activateView(id);
+              }}
               className={[
                 "relative group w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-150",
                 isActive

@@ -10,7 +10,7 @@ import SopForm from '../../components/SopForm';
 import { UserMenu } from '../../components/UserMenu';
 import { useSOPRepository } from '../../lib/hooks/useSOPRepository';
 
-const INITIAL_SOPS: SOP[] = normalizeSOPs([
+export const INITIAL_SOPS = [
   {
     id: '1',
     title: 'Emergency Maintenance Request',
@@ -226,7 +226,7 @@ const INITIAL_SOPS: SOP[] = normalizeSOPs([
       { title: 'Transfer policy', fileUrl: '/files/transfer-policy.pdf' },
     ],
   },
-]);
+];
 
 
 const CATEGORIES = ['Operations', 'Resident Support', 'Finance', 'Leasing'];
@@ -291,7 +291,7 @@ const AskAISection = React.memo(function AskAISection({ selectedSOP }: { selecte
 });
 
 export default function Home() {
-  const { sops, createSOP, updateSOP } = useSOPRepository('parkmerced', INITIAL_SOPS);
+  const { sops, createSOP, updateSOP } = useSOPRepository('parkmerced', normalizeSOPs(INITIAL_SOPS));
   const [selectedSOP, setSelectedSOP] = useState<SOP | null>(null);
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [editingSOP, setEditingSOP] = useState<SOP | null>(null);
@@ -512,6 +512,7 @@ export default function Home() {
         onClearSearch={() => setSearchQuery("")}
         pinnedIds={pinnedIds}
         onTogglePin={togglePin}
+        onHomeClick={() => { window.location.href = '/'; }}
       />
 
       <div className="flex-1 flex flex-col">
