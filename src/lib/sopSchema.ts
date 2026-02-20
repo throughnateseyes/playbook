@@ -29,6 +29,7 @@ export const contactSchema = z.object({
 
 export const referenceMaterialSchema = z.object({
   title: z.string(),
+  caption: z.string().optional(),
   thumbnailUrl: z.string().optional(),
   fileUrl: z.string().optional(),
 });
@@ -81,8 +82,11 @@ const contactFormSchema = z.object({
 
 const referenceMaterialFormSchema = z.object({
   title: z.string(),
+  caption: z.string(),
   thumbnailUrl: z.string(),
   fileUrl: z.string(),
+  fileName: z.string(),
+  file: z.any(),
 });
 
 export const sopFormSchema = z.object({

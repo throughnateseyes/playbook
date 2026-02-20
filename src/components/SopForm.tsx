@@ -1,7 +1,7 @@
-"use client";
+                                                                                                                                                                                                                                                                                                                                                                                                                                        "use client";
 
 import React, { useReducer, useState, useCallback, useRef } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, FileText, GripVertical, UploadCloud } from "lucide-react";
 import type { SOP } from "../types";
 import { normalizeSOP } from "../lib/normalize";
 import { parseSOPForm } from "../lib/sopSchema";
@@ -32,8 +32,11 @@ interface ContactFormData {
 
 interface ReferenceMaterialFormData {
   title: string;
+  caption: string;
   thumbnailUrl: string;
   fileUrl: string;
+  fileName: string;
+  file: File | null;
 }
 
 interface SOPFormData {
@@ -64,7 +67,7 @@ function emptyContact(): ContactFormData {
 }
 
 function emptyReferenceMaterial(): ReferenceMaterialFormData {
-  return { title: "", thumbnailUrl: "", fileUrl: "" };
+  return { title: "", caption: "", thumbnailUrl: "", fileUrl: "", fileName: "", file: null };
 }
 
 function emptyFormData(defaultCategory: string): SOPFormData {
@@ -115,8 +118,11 @@ function sopToFormData(sop: SOP): SOPFormData {
     referenceMaterials: sop.referenceMaterials.length > 0
       ? sop.referenceMaterials.map((r) => ({
           title: r.title,
+          caption: r.caption ?? "",
           thumbnailUrl: r.thumbnailUrl ?? "",
           fileUrl: r.fileUrl ?? "",
+          fileName: "",
+          file: null,
         }))
       : [emptyReferenceMaterial()],
   };
@@ -155,6 +161,7 @@ function formDataToSOP(form: SOPFormData, existingId?: string): SOP {
       .filter((r) => r.title.trim())
       .map((r) => ({
         title: r.title,
+        ...(r.caption.trim() ? { caption: r.caption } : {}),
         ...(r.thumbnailUrl.trim() ? { thumbnailUrl: r.thumbnailUrl } : {}),
         ...(r.fileUrl.trim() ? { fileUrl: r.fileUrl } : {}),
       })),
@@ -178,6 +185,7 @@ type FormAction =
   | { type: "SET_REFERENCE"; index: number; field: keyof ReferenceMaterialFormData; value: string }
   | { type: "ADD_REFERENCE" }
   | { type: "REMOVE_REFERENCE"; index: number }
+  | { type: "ADD_FILES"; files: File[] }
   | { type: "RESET"; data: SOPFormData };
 
 function formReducer(state: SOPFormData, action: FormAction): SOPFormData {
@@ -231,6 +239,21 @@ function formReducer(state: SOPFormData, action: FormAction): SOPFormData {
       return { ...state, referenceMaterials: [...state.referenceMaterials, emptyReferenceMaterial()] };
     case "REMOVE_REFERENCE":
       return { ...state, referenceMaterials: state.referenceMaterials.filter((_, i) => i !== action.index) };
+    case "ADD_FILES":
+      return {
+        ...state,
+        referenceMaterials: [
+          ...state.referenceMaterials.filter((r) => r.title.trim() || r.file),
+          ...action.files.map((f) => ({
+            title: f.name.replace(/\.[^/.]+$/, ""),
+            caption: "",
+            thumbnailUrl: "",
+            fileUrl: "",
+            fileName: f.name,
+            file: f,
+          })),
+        ],
+      };
 
     case "RESET":
       return action.data;
@@ -241,22 +264,6 @@ function formReducer(state: SOPFormData, action: FormAction): SOPFormData {
 }
 
 // ── Icons (inline SVGs to avoid extra lucide imports) ────────────────────────
-
-function ArrowUpIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-text-secondary">
-      <path d="M8 12V4M4 8l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function ArrowDownIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-text-secondary">
-      <path d="M8 4v8M12 8l-4 4-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 function XIcon() {
   return (
@@ -273,13 +280,6 @@ function CloseIcon() {
     </svg>
   );
 }
-
-// ── Shared input classes ─────────────────────────────────────────────────────
-
-const INPUT_CLS = "w-full px-4 py-2.5 rounded-xl border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background";
-const INNER_INPUT_CLS = "w-full px-3 py-2 rounded-lg border border-border-strong text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring bg-background";
-const TEXTAREA_CLS = INPUT_CLS;
-const INNER_TEXTAREA_CLS = INNER_INPUT_CLS;
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -347,6 +347,32 @@ export default function SopForm({
     });
   }, []);
 
+  // ── File upload (Reference Materials) ──
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) dispatch({ type: "ADD_FILES", files });
+  }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length > 0) dispatch({ type: "ADD_FILES", files });
+    e.target.value = "";
+  }, []);
+
   const handleSave = useCallback(() => {
     const result = parseSOPForm(form);
     if (!result.success) {
@@ -396,35 +422,33 @@ export default function SopForm({
       </div>
 
       {/* Scrollable body */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-8">
-        <div className="space-y-8">
-          {/* ── Section 1: Basic Information ──────────────────────────────── */}
-          <section>
-            <h3 className="text-lg font-semibold text-foreground mb-6 tracking-tight flex items-center gap-2">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">1</span>
-              Basic Information
-            </h3>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={(e) => {
-                    dispatch({ type: "SET_FIELD", field: "title", value: e.target.value });
-                    clearError("title");
-                  }}
-                  className={INPUT_CLS}
-                  placeholder="Enter SOP title"
-                />
-                {errors.title && <p className="text-xs text-red-500 mt-1.5" data-error>{errors.title}</p>}
-              </div>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-8">
+        {/* ── Basic Information ──────────────────────────────────── */}
+        <section className="pt-10 pb-12">
+          <div className="space-y-7">
+            <div>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => {
+                  dispatch({ type: "SET_FIELD", field: "title", value: e.target.value });
+                  clearError("title");
+                }}
+                aria-label="SOP title"
+                className="w-full text-2xl font-semibold tracking-tight text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none py-1"
+                placeholder="Untitled procedure"
+              />
+              {errors.title ? (
+                <p className="text-xs text-red-500 mt-1.5" data-error>{errors.title}</p>
+              ) : (
+                <p className="text-[11px] text-text-faint mt-1.5">Required</p>
+              )}
+            </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Category <span className="text-red-500">*</span>
+                <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">
+                  Category
                 </label>
                 <select
                   value={form.category}
@@ -432,7 +456,7 @@ export default function SopForm({
                     dispatch({ type: "SET_FIELD", field: "category", value: e.target.value });
                     clearError("category");
                   }}
-                  className={INPUT_CLS}
+                  className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
                 >
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -440,396 +464,394 @@ export default function SopForm({
                 </select>
                 {errors.category && <p className="text-xs text-red-500 mt-1.5" data-error>{errors.category}</p>}
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Tags</label>
+                <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">
+                  Tags
+                </label>
                 <input
                   type="text"
                   value={form.tags}
                   onChange={(e) => dispatch({ type: "SET_FIELD", field: "tags", value: e.target.value })}
-                  className={INPUT_CLS}
+                  className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
                   placeholder="e.g., Urgent, After-Hours"
                 />
-                <p className="mt-2 text-xs text-text-muted">Separate multiple tags with commas</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Overview</label>
-                <textarea
-                  value={form.overview}
-                  onChange={(e) => dispatch({ type: "SET_FIELD", field: "overview", value: e.target.value })}
-                  rows={3}
-                  className={TEXTAREA_CLS}
-                  placeholder="Brief overview of this procedure"
-                />
+                <p className="mt-1.5 text-[11px] text-text-faint">Comma-separated</p>
               </div>
             </div>
-          </section>
 
-          <div className="border-t border-border" />
-
-          {/* ── Section 2: Steps ──────────────────────────────────────────── */}
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-foreground tracking-tight flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">2</span>
-                Steps
-              </h3>
-              <button
-                type="button"
-                onClick={() => dispatch({ type: "ADD_STEP" })}
-                className="px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 active:bg-blue-200 transition-colors font-medium"
-              >
-                + Add Step
-              </button>
+            <div>
+              <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">
+                Overview
+              </label>
+              <textarea
+                value={form.overview}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "overview", value: e.target.value })}
+                rows={4}
+                className="w-full px-3.5 py-2.5 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background resize-none"
+                placeholder="What is this procedure about?"
+              />
             </div>
-            {errors.steps && <p className="text-xs text-red-500 mb-4" data-error>{errors.steps}</p>}
-            <div className="space-y-4">
-              {form.steps.map((step, index) => (
-                <div key={index} className="bg-surface border border-border rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <input
-                        type="text"
-                        value={step.title}
-                        onChange={(e) => {
-                          dispatch({ type: "SET_STEP", index, field: "title", value: e.target.value });
-                          clearError("steps");
-                        }}
-                        className={INNER_INPUT_CLS}
-                        placeholder="Step title (optional)"
+          </div>
+        </section>
+
+        {/* ── Steps ─────────────────────────────────────────────── */}
+        <section className="border-t border-border-muted pt-7 pb-9">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="ty-section-label">Steps</h3>
+            <button
+              type="button"
+              onClick={() => dispatch({ type: "ADD_STEP" })}
+              className="px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
+            >
+              + Add step
+            </button>
+          </div>
+          {errors.steps && <p className="text-xs text-red-500 mb-4" data-error>{errors.steps}</p>}
+          <div className="space-y-3">
+            {form.steps.map((step, index) => (
+              <div key={index} className="group/step border border-border-muted rounded-lg p-5">
+                <div className="flex items-start gap-3">
+                  <span className="text-[12px] font-medium text-text-faint tabular-nums w-5 text-right pt-2.5 select-none">
+                    {index + 1}
+                  </span>
+                  <div className="flex-1 min-w-0 space-y-3">
+                    <input
+                      type="text"
+                      value={step.title}
+                      onChange={(e) => {
+                        dispatch({ type: "SET_STEP", index, field: "title", value: e.target.value });
+                        clearError("steps");
+                      }}
+                      className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                      placeholder="Step title (optional)"
+                    />
+                    <textarea
+                      value={step.text}
+                      onChange={(e) => {
+                        dispatch({ type: "SET_STEP", index, field: "text", value: e.target.value });
+                        clearError("steps");
+                      }}
+                      rows={2}
+                      className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background resize-none"
+                      placeholder="Detailed instructions for this step"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleStepExpand(index)}
+                      className="flex items-center gap-1 text-[11px] font-medium text-text-muted hover:text-foreground transition-colors mt-3"
+                    >
+                      <ChevronDown
+                        size={13}
+                        strokeWidth={2}
+                        className={`transition-transform duration-150 ${expandedSteps.has(index) ? "rotate-180" : ""}`}
                       />
-                      <textarea
-                        value={step.text}
-                        onChange={(e) => {
-                          dispatch({ type: "SET_STEP", index, field: "text", value: e.target.value });
-                          clearError("steps");
-                        }}
-                        rows={2}
-                        className={INNER_TEXTAREA_CLS}
-                        placeholder="Detailed instructions for this step"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => toggleStepExpand(index)}
-                        className="flex items-center gap-1 text-[13px] text-text-muted hover:text-accent transition-colors"
-                      >
-                        <ChevronDown
-                          size={13}
-                          strokeWidth={2}
-                          className={`transition-transform duration-150 ${expandedSteps.has(index) ? "rotate-180" : ""}`}
-                        />
-                        {expandedSteps.has(index) ? "Hide optional fields" : "Image URL, Script"}
-                      </button>
-                      {expandedSteps.has(index) && (
-                        <div className="space-y-3 pt-1">
+                      {expandedSteps.has(index) ? "Hide attachments" : "Attachments"}
+                    </button>
+                    {expandedSteps.has(index) && (
+                      <div className="space-y-3 pt-1">
+                        <div>
+                          <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">Image</label>
                           <input
                             type="text"
                             value={step.imageUrl}
                             onChange={(e) => dispatch({ type: "SET_STEP", index, field: "imageUrl", value: e.target.value })}
-                            className={INNER_INPUT_CLS}
-                            placeholder="Image URL (optional)"
+                            className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                            placeholder="Image URL"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">Script</label>
                           <textarea
                             value={step.script}
                             onChange={(e) => dispatch({ type: "SET_STEP", index, field: "script", value: e.target.value })}
                             rows={3}
-                            className={`${INNER_TEXTAREA_CLS} font-mono`}
-                            placeholder="Script / code block (optional)"
+                            className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background font-mono resize-none"
+                            placeholder="Script / code block"
                           />
                         </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <button
-                        type="button"
-                        onClick={() => dispatch({ type: "MOVE_STEP", index, direction: "up" })}
-                        disabled={index === 0}
-                        className="p-1 hover:bg-surface-3 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        title="Move up"
-                      >
-                        <ArrowUpIcon />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => dispatch({ type: "MOVE_STEP", index, direction: "down" })}
-                        disabled={index === form.steps.length - 1}
-                        className="p-1 hover:bg-surface-3 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        title="Move down"
-                      >
-                        <ArrowDownIcon />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => dispatch({ type: "REMOVE_STEP", index })}
-                        disabled={form.steps.length === 1}
-                        className="p-1 hover:bg-red-100 active:bg-red-200 rounded text-red-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        title="Remove step"
-                      >
-                        <XIcon />
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <div className="border-t border-border" />
-
-          {/* ── Section 3: Edge Cases ─────────────────────────────────────── */}
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-foreground tracking-tight flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">3</span>
-                Edge Cases
-              </h3>
-              <button
-                type="button"
-                onClick={() => dispatch({ type: "ADD_EDGE_CASE" })}
-                className="px-3 py-1.5 text-sm bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 active:bg-amber-200 transition-colors font-medium"
-              >
-                + Add Edge Case
-              </button>
-            </div>
-            <div className="space-y-4">
-              {form.edgeCases.map((edge, index) => (
-                <div key={index} className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <input
-                      type="text"
-                      value={edge.title}
-                      onChange={(e) => dispatch({ type: "SET_EDGE_CASE", index, field: "title", value: e.target.value })}
-                      className="flex-1 px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-700/50 text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-amber-500 bg-background"
-                      placeholder="Edge case title"
-                    />
+                  <div className="flex flex-col items-center gap-1 pt-1.5">
+                    <span
+                      className="p-1 text-text-faint/40 group-hover/step:text-text-faint cursor-grab transition-colors duration-150"
+                      aria-hidden="true"
+                      title="Drag to reorder"
+                    >
+                      <GripVertical size={16} strokeWidth={1.75} />
+                    </span>
                     <button
                       type="button"
-                      onClick={() => dispatch({ type: "REMOVE_EDGE_CASE", index })}
-                      className="ml-2 p-1 hover:bg-red-100 active:bg-red-200 rounded text-red-600 transition-colors"
-                      title="Remove edge case"
+                      onClick={() => dispatch({ type: "REMOVE_STEP", index })}
+                      disabled={form.steps.length === 1}
+                      className="p-1 rounded-lg text-text-faint hover:text-foreground hover:bg-surface-2 opacity-0 group-hover/step:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150"
+                      title="Remove step"
                     >
                       <XIcon />
                     </button>
                   </div>
-                  <textarea
-                    value={edge.description}
-                    onChange={(e) => dispatch({ type: "SET_EDGE_CASE", index, field: "description", value: e.target.value })}
-                    rows={2}
-                    className="w-full px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-700/50 text-sm text-foreground placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-amber-500 bg-background"
-                    placeholder="Description"
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Edge Cases ─────────────────────────────────────────── */}
+        <section className="border-t border-border-muted pt-7 pb-9">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="ty-section-label">Edge Cases</h3>
+            <button
+              type="button"
+              onClick={() => dispatch({ type: "ADD_EDGE_CASE" })}
+              className="px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
+            >
+              + Add edge case
+            </button>
+          </div>
+          <div className="space-y-3">
+            {form.edgeCases.map((edge, index) => (
+              <div key={index} className="group border border-border-muted rounded-lg p-4">
+                <div className="flex items-start justify-between mb-1.5">
+                  <input
+                    type="text"
+                    value={edge.title}
+                    onChange={(e) => dispatch({ type: "SET_EDGE_CASE", index, field: "title", value: e.target.value })}
+                    className="flex-1 w-full text-sm font-medium text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
+                    placeholder="Edge case title"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: "REMOVE_EDGE_CASE", index })}
+                    className="ml-2 p-1 hover:bg-surface-2 rounded-lg text-text-faint hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-150"
+                    title="Remove edge case"
+                  >
+                    <XIcon />
+                  </button>
+                </div>
+                <textarea
+                  value={edge.description}
+                  onChange={(e) => dispatch({ type: "SET_EDGE_CASE", index, field: "description", value: e.target.value })}
+                  rows={2}
+                  className="w-full px-0 py-1 text-sm leading-relaxed text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none resize-none"
+                  placeholder="Describe how to handle this case…"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Escalation ────────────────────────────────────────── */}
+        <section className="border-t border-border-muted pt-7 pb-9">
+          <h3 className="ty-section-label mb-1.5">Escalation</h3>
+          <p className="text-[11px] text-text-faint mb-5">Only include escalation when it requires a different owner or a safety/financial threshold.</p>
+          <div className="rounded-lg border border-border-muted p-5 space-y-4">
+            <div>
+              <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">When to escalate</label>
+              <textarea
+                value={form.escalationWhen}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "escalationWhen", value: e.target.value })}
+                rows={2}
+                className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background resize-none"
+                placeholder="Describe escalation criteria"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">Who to contact</label>
+              <input
+                type="text"
+                value={form.escalationWho}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "escalationWho", value: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                placeholder="Name, role, or contact info"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* ── Contacts ──────────────────────────────────────────── */}
+        <section className="border-t border-border-muted pt-7 pb-9">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="ty-section-label">Contacts</h3>
+            <button
+              type="button"
+              onClick={() => dispatch({ type: "ADD_CONTACT" })}
+              className="px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
+            >
+              + Add contact
+            </button>
+          </div>
+          <div className="space-y-3">
+            {form.contacts.map((contact, index) => (
+              <div key={index} className="group relative border border-border-muted rounded-lg p-4">
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: "REMOVE_CONTACT", index })}
+                  className="absolute top-3 right-3 p-1 hover:bg-surface-2 rounded-lg text-text-faint hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-150"
+                  title="Remove contact"
+                >
+                  <XIcon />
+                </button>
+                <div className="grid grid-cols-2 gap-3 pr-8">
+                  <input
+                    type="text"
+                    value={contact.name}
+                    onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "name", value: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                    placeholder="Name"
+                  />
+                  <input
+                    type="text"
+                    value={contact.role}
+                    onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "role", value: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                    placeholder="Role"
                   />
                 </div>
-              ))}
-            </div>
-          </section>
-
-          <div className="border-t border-border" />
-
-          {/* ── Section 4: Escalation ─────────────────────────────────────── */}
-          <section>
-            <h3 className="text-lg font-semibold text-foreground mb-6 tracking-tight flex items-center gap-2">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-700 text-xs font-bold">4</span>
-              Escalation
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">When to Escalate</label>
-                <textarea
-                  value={form.escalationWhen}
-                  onChange={(e) => dispatch({ type: "SET_FIELD", field: "escalationWhen", value: e.target.value })}
-                  rows={2}
-                  className={TEXTAREA_CLS}
-                  placeholder="Describe escalation criteria"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Who to Contact</label>
-                <input
-                  type="text"
-                  value={form.escalationWho}
-                  onChange={(e) => dispatch({ type: "SET_FIELD", field: "escalationWho", value: e.target.value })}
-                  className={INPUT_CLS}
-                  placeholder="Contact name and role"
-                />
-              </div>
-            </div>
-          </section>
-
-          <div className="border-t border-border" />
-
-          {/* ── Section 5: Contacts ───────────────────────────────────────── */}
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-foreground tracking-tight flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">5</span>
-                Contacts
-              </h3>
-              <button
-                type="button"
-                onClick={() => dispatch({ type: "ADD_CONTACT" })}
-                className="px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 active:bg-blue-200 transition-colors font-medium"
-              >
-                + Add Contact
-              </button>
-            </div>
-            <div className="space-y-4">
-              {form.contacts.map((contact, index) => (
-                <div key={index} className="bg-surface border border-border rounded-xl p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 grid grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        value={contact.name}
-                        onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "name", value: e.target.value })}
-                        className={INNER_INPUT_CLS}
-                        placeholder="Name"
-                      />
-                      <input
-                        type="text"
-                        value={contact.role}
-                        onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "role", value: e.target.value })}
-                        className={INNER_INPUT_CLS}
-                        placeholder="Role"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => dispatch({ type: "REMOVE_CONTACT", index })}
-                      className="ml-2 p-1 hover:bg-red-100 active:bg-red-200 rounded text-red-600 transition-colors"
-                      title="Remove contact"
-                    >
-                      <XIcon />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <input
-                      type="text"
-                      value={contact.department}
-                      onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "department", value: e.target.value })}
-                      className={INNER_INPUT_CLS}
-                      placeholder="Department"
-                    />
-                  </div>
+                <div className="mt-3">
+                  <input
+                    type="text"
+                    value={contact.department}
+                    onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "department", value: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                    placeholder="Department"
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-1.5">When to contact</label>
                   <textarea
                     value={contact.description}
                     onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "description", value: e.target.value })}
                     rows={2}
-                    className={INNER_TEXTAREA_CLS}
-                    placeholder="When to contact this person (optional)"
+                    className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background resize-none"
+                    placeholder="Describe when to reach out to this person (optional)"
                   />
-                  <button
-                    type="button"
-                    onClick={() => toggleContactExpand(index)}
-                    className="flex items-center gap-1 text-[13px] text-text-muted hover:text-accent transition-colors mt-3"
-                  >
-                    <ChevronDown
-                      size={13}
-                      strokeWidth={2}
-                      className={`transition-transform duration-150 ${expandedContacts.has(index) ? "rotate-180" : ""}`}
-                    />
-                    {expandedContacts.has(index) ? "Hide optional links" : "Avatar, Teams, LinkedIn URLs"}
-                  </button>
-                  {expandedContacts.has(index) && (
-                    <div className="space-y-3 mt-3">
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleContactExpand(index)}
+                  className="flex items-center gap-1 text-[11px] font-medium text-text-muted hover:text-foreground transition-colors mt-3"
+                >
+                  <ChevronDown
+                    size={13}
+                    strokeWidth={2}
+                    className={`transition-transform duration-150 ${expandedContacts.has(index) ? "rotate-180" : ""}`}
+                  />
+                  {expandedContacts.has(index) ? "Hide advanced" : "Advanced"}
+                </button>
+                {expandedContacts.has(index) && (
+                  <div className="space-y-3 mt-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <input
                         type="text"
                         value={contact.avatarUrl}
                         onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "avatarUrl", value: e.target.value })}
-                        className={INNER_INPUT_CLS}
-                        placeholder="Avatar URL (optional)"
+                        className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                        placeholder="Avatar URL"
                       />
                       <input
                         type="text"
                         value={contact.teamsUrl}
                         onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "teamsUrl", value: e.target.value })}
-                        className={INNER_INPUT_CLS}
-                        placeholder="Teams URL (optional)"
-                      />
-                      <input
-                        type="text"
-                        value={contact.linkedinUrl}
-                        onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "linkedinUrl", value: e.target.value })}
-                        className={INNER_INPUT_CLS}
-                        placeholder="LinkedIn URL (optional)"
+                        className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                        placeholder="Teams URL"
                       />
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <div className="border-t border-border" />
-
-          {/* ── Section 6: Reference Materials ────────────────────────────── */}
-          <section>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-foreground tracking-tight flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold">6</span>
-                Reference Materials
-              </h3>
-              <button
-                type="button"
-                onClick={() => dispatch({ type: "ADD_REFERENCE" })}
-                className="px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 active:bg-green-200 transition-colors font-medium"
-              >
-                + Add Reference
-              </button>
-            </div>
-            <div className="space-y-4">
-              {form.referenceMaterials.map((ref, index) => (
-                <div key={index} className="bg-surface border border-border rounded-xl p-4">
-                  <div className="flex items-start justify-between mb-3">
                     <input
                       type="text"
-                      value={ref.title}
-                      onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "title", value: e.target.value })}
-                      className={`flex-1 ${INNER_INPUT_CLS}`}
-                      placeholder="Document title"
+                      value={contact.linkedinUrl}
+                      onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "linkedinUrl", value: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                      placeholder="LinkedIn URL"
                     />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Reference Materials ────────────────────────────────── */}
+        <section className="border-t border-border-muted pt-7 pb-9">
+          <h3 className="ty-section-label mb-5">Reference Materials</h3>
+
+          {/* Dropzone */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={[
+              "border-2 border-dashed rounded-lg px-6 py-8 text-center cursor-pointer transition-colors duration-150",
+              isDragging
+                ? "border-accent bg-accent/5"
+                : "border-border-muted hover:border-border-strong hover:bg-surface-2/50",
+            ].join(" ")}
+          >
+            <UploadCloud size={20} strokeWidth={1.5} className="mx-auto mb-2 text-text-faint" />
+            <p className="text-sm text-text-muted">
+              Drop files here or{" "}
+              <span className="font-medium text-foreground">Browse files</span>
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+          </div>
+
+          {/* File list */}
+          {form.referenceMaterials.some((r) => r.title.trim() || r.file) && (
+            <div className="space-y-2 mt-4">
+              {form.referenceMaterials.map((ref, index) =>
+                !ref.title.trim() && !ref.file ? null : (
+                  <div key={index} className="group relative flex items-start gap-3 border border-border-muted rounded-lg p-3">
+                    <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center">
+                      <FileText size={16} strokeWidth={1.5} className="text-text-faint" />
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={ref.title}
+                          onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "title", value: e.target.value })}
+                          className="flex-1 min-w-0 text-sm font-medium text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
+                          placeholder="Document title"
+                        />
+                        {ref.fileName && (
+                          <span className="flex-shrink-0 text-[11px] text-text-faint truncate max-w-[140px]">
+                            {ref.fileName}
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        value={ref.caption}
+                        onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "caption", value: e.target.value })}
+                        className="w-full text-sm text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
+                        placeholder="Caption (optional)"
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={() => dispatch({ type: "REMOVE_REFERENCE", index })}
-                      className="ml-2 p-1 hover:bg-red-100 active:bg-red-200 rounded text-red-600 transition-colors"
+                      className="absolute top-3 right-3 p-1 hover:bg-surface-2 rounded-lg text-text-faint hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-150"
                       title="Remove reference"
                     >
                       <XIcon />
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      value={ref.thumbnailUrl}
-                      onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "thumbnailUrl", value: e.target.value })}
-                      className={INNER_INPUT_CLS}
-                      placeholder="Thumbnail URL (optional)"
-                    />
-                    <input
-                      type="text"
-                      value={ref.fileUrl}
-                      onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "fileUrl", value: e.target.value })}
-                      className={INNER_INPUT_CLS}
-                      placeholder="File URL (optional)"
-                    />
-                  </div>
-                </div>
-              ))}
+                )
+              )}
             </div>
-          </section>
-
-          <div className="h-4" />
-        </div>
+          )}
+        </section>
       </div>
 
       {/* Footer */}
-      <div className="flex-shrink-0 flex items-center justify-between px-8 py-4 border-t border-border bg-surface">
-        <p className="text-xs text-text-muted">
-          <span className="text-red-500">*</span> Required fields
-        </p>
+      <div className="flex-shrink-0 flex items-center justify-between px-8 py-4 border-t border-border bg-background">
+        <p className="text-xs text-text-faint">Title and category are required</p>
         <div className="flex items-center gap-3">
           <button
             type="button"

@@ -675,7 +675,7 @@ export default function Home() {
               onSave={(sop) => {
                 if (isEditMode && editingSOP) {
                   setSelectedSOP(updateSOP(editingSOP.id, sop));
-                } else {
+                } else {1
                   setSelectedSOP(createSOP(sop));
                 }
                 closePanel();

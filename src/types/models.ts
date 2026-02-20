@@ -29,6 +29,7 @@ export interface Step {
 
 export interface ReferenceMaterial {
   title: string;
+  caption?: string;
   thumbnailUrl?: string;
   fileUrl?: string;
 }
