@@ -7,35 +7,30 @@ export interface EdgeCase {
 
 export interface Escalation {
   when: string;
-  contact: string;
+  who: string;
 }
 
 export interface Contact {
-  label: string;
   name: string;
-  team: string;
-  reason: string;
+  role: string;
+  department: string;
+  description?: string;
+  avatarUrl?: string;
   teamsUrl?: string;
   linkedinUrl?: string;
 }
 
-export interface StepAttachment {
-  type: "image" | "file";
-  url: string;
-  label?: string;
-}
-
 export interface Step {
-  title: string;
-  description?: string;
+  text: string;
+  title?: string;
+  imageUrl?: string;
   script?: string;
-  attachments?: StepAttachment[];
 }
 
 export interface ReferenceMaterial {
   title: string;
-  fileUrl: string;
   thumbnailUrl?: string;
+  fileUrl?: string;
 }
 
 export interface SOP {

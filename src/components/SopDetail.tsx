@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo, startTransition } from "react";
-import { ChevronDown, Star, Copy, Check, FileText, Image, AlertTriangle, User, ExternalLink, Download } from "lucide-react";
-import type { SOP, Step, StepAttachment, EdgeCase } from "../types";
+import { ChevronDown, Star, Copy, Check, FileText, AlertTriangle, User, ExternalLink, Download } from "lucide-react";
+import type { SOP, Step, EdgeCase } from "../types";
 
 // ─── SectionLabel ─────────────────────────────────────────────────────────────
 
@@ -51,33 +51,6 @@ const ScriptBlock = React.memo(function ScriptBlock({ code }: { code: string }) 
   );
 });
 
-// ─── AttachmentsGrid ──────────────────────────────────────────────────────────
-
-const AttachmentsGrid = React.memo(function AttachmentsGrid({ items }: { items: StepAttachment[] }) {
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      {items.map((item, i) => (
-        <a
-          key={i}
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border bg-background hover:bg-surface hover:border-border-strong transition-all duration-150"
-        >
-          {item.type === "image" ? (
-            <Image size={13} strokeWidth={1.5} className="flex-shrink-0 text-text-faint" />
-          ) : (
-            <FileText size={13} strokeWidth={1.5} className="flex-shrink-0 text-text-faint" />
-          )}
-          <span className="text-[12px] text-text-secondary truncate">
-            {item.label ?? item.url}
-          </span>
-        </a>
-      ))}
-    </div>
-  );
-});
-
 // ─── StepRow ──────────────────────────────────────────────────────────────────
 
 interface StepRowProps {
@@ -93,7 +66,7 @@ const StepRow = React.memo(function StepRow({
 }: StepRowProps) {
   const [open, setOpen] = useState(false);
   const [showContent, setShowContent] = useState(false);
-  const hasContent = !!(step.description || step.script || step.attachments?.length);
+  const hasContent = !!(step.text || step.script || step.imageUrl);
 
   const handleToggle = useCallback(() => {
     if (!hasContent) return;
@@ -119,7 +92,7 @@ const StepRow = React.memo(function StepRow({
           {index + 1}
         </span>
         <span className="ty-list-title">
-          {highlightText(step.title)}
+          {highlightText(step.title ?? step.text)}
         </span>
         {hasContent ? (
           <ChevronDown
@@ -138,15 +111,19 @@ const StepRow = React.memo(function StepRow({
       {/* Expanded content — deferred mount, fully unmounted when collapsed */}
       {showContent && hasContent && (
         <div className="pl-10 pr-2 pb-5 space-y-4">
-          {step.description && (
+          {step.text && (
             <p className="ty-secondary">
-              {highlightText(step.description)}
+              {highlightText(step.text)}
             </p>
           )}
           {step.script && <ScriptBlock code={step.script} />}
-          {step.attachments?.length ? (
-            <AttachmentsGrid items={step.attachments} />
-          ) : null}
+          {step.imageUrl && (
+            <img
+              src={step.imageUrl}
+              alt=""
+              className="rounded-lg border border-border max-w-full max-h-64 object-contain"
+            />
+          )}
         </div>
       )}
     </div>
@@ -303,7 +280,7 @@ const SopDetail = React.memo(function SopDetail({
       )}
 
       {/* ── Edge Cases + Escalation — 2-column layout ────────────────── */}
-      {(sop.edgeCases.length > 0 || sop.escalation.when || sop.escalation.contact) && (
+      {(sop.edgeCases.length > 0 || sop.escalation.when || sop.escalation.who) && (
         <section className="border-t border-border-muted pt-7 pb-9">
           <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8">
             {/* ── Left column: Edge Cases ─────────────────────────────────── */}
@@ -325,14 +302,14 @@ const SopDetail = React.memo(function SopDetail({
             )}
 
             {/* ── Right column: Escalation ────────────────────────────────── */}
-            {(sop.escalation.when || sop.escalation.contact) && (
+            {(sop.escalation.when || sop.escalation.who) && (
               <div>
                 <SectionLabel>Escalation</SectionLabel>
                 <div className="rounded-lg border border-border-muted overflow-hidden">
                   {sop.escalation.when && (
                     <div className={[
                       "flex items-start gap-3 px-4 py-3",
-                      sop.escalation.contact ? "border-b border-border-muted" : "",
+                      sop.escalation.who ? "border-b border-border-muted" : "",
                     ].join(" ")}>
                       <AlertTriangle
                         size={13}
@@ -347,7 +324,7 @@ const SopDetail = React.memo(function SopDetail({
                       </div>
                     </div>
                   )}
-                  {sop.escalation.contact && (
+                  {sop.escalation.who && (
                     <div className="flex items-start gap-3 px-4 py-3">
                       <User
                         size={13}
@@ -357,7 +334,7 @@ const SopDetail = React.memo(function SopDetail({
                       <div className="flex-1 min-w-0">
                         <p className="ty-section-label mb-1">Who</p>
                         <p className="ty-secondary">
-                          {highlightText(sop.escalation.contact)}
+                          {highlightText(sop.escalation.who)}
                         </p>
                       </div>
                     </div>
@@ -395,14 +372,16 @@ const SopDetail = React.memo(function SopDetail({
                     <span className="text-[15px] font-semibold text-foreground">
                       {highlightText(c.name)}
                     </span>
-                    <span className="text-[12px] text-text-muted">{c.label}</span>
-                    {c.team && (
-                      <span className="text-[11px] text-text-muted">· {c.team}</span>
+                    <span className="text-[12px] text-text-muted">{c.role}</span>
+                    {c.department && (
+                      <span className="text-[11px] text-text-muted">· {c.department}</span>
                     )}
                   </div>
-                  <p className="ty-secondary">
-                    {highlightText(c.reason)}
-                  </p>
+                  {c.description && (
+                    <p className="ty-secondary">
+                      {highlightText(c.description)}
+                    </p>
+                  )}
                   {(c.teamsUrl || c.linkedinUrl) && (
                     <div className="flex items-center gap-2 mt-2">
                       {c.teamsUrl && (
@@ -441,33 +420,39 @@ const SopDetail = React.memo(function SopDetail({
         <section className="border-t border-border-muted pt-7 pb-9">
           <SectionLabel>Reference Materials</SectionLabel>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {sop.referenceMaterials.map((ref, i) => (
-              <a
-                key={i}
-                href={ref.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex flex-col rounded-lg border border-border bg-surface overflow-hidden hover:border-border-strong hover:shadow-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <div className="aspect-video bg-surface-2 flex items-center justify-center">
-                  {ref.thumbnailUrl ? (
-                    <img src={ref.thumbnailUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <FileText size={24} strokeWidth={1.25} className="text-text-faint" />
-                  )}
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2.5">
-                  <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground truncate">
-                    {highlightText(ref.title)}
-                  </span>
-                  <Download
-                    size={13}
-                    strokeWidth={1.75}
-                    className="flex-shrink-0 text-text-faint group-hover:text-text-muted transition-colors"
-                  />
-                </div>
-              </a>
-            ))}
+            {sop.referenceMaterials.map((ref, i) => {
+              const Wrapper = ref.fileUrl ? "a" : "div";
+              const linkProps = ref.fileUrl
+                ? { href: ref.fileUrl, target: "_blank" as const, rel: "noopener noreferrer" }
+                : {};
+              return (
+                <Wrapper
+                  key={i}
+                  {...linkProps}
+                  className="group flex flex-col rounded-lg border border-border bg-surface overflow-hidden hover:border-border-strong hover:shadow-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <div className="aspect-video bg-surface-2 flex items-center justify-center">
+                    {ref.thumbnailUrl ? (
+                      <img src={ref.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <FileText size={24} strokeWidth={1.25} className="text-text-faint" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-2.5">
+                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground truncate">
+                      {highlightText(ref.title)}
+                    </span>
+                    {ref.fileUrl && (
+                      <Download
+                        size={13}
+                        strokeWidth={1.75}
+                        className="flex-shrink-0 text-text-faint group-hover:text-text-muted transition-colors"
+                      />
+                    )}
+                  </div>
+                </Wrapper>
+              );
+            })}
           </div>
         </section>
       )}

@@ -2,7 +2,6 @@ export type {
   EdgeCase,
   Escalation,
   Contact,
-  StepAttachment,
   Step,
   ReferenceMaterial,
   SOP,

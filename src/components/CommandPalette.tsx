@@ -87,7 +87,7 @@ function buildSearchIndex(sops: SOP[]): SearchEntry[] {
     sop.steps.forEach((step, i) => {
       const title = getStepText(step);
       const stepObj = (step !== null && typeof step === "object") ? step as unknown as Record<string, unknown> : null;
-      const parts = [title, stepObj?.description as string | undefined, stepObj?.script as string | undefined].filter(Boolean) as string[];
+      const parts = [title, stepObj?.text as string | undefined, stepObj?.script as string | undefined].filter(Boolean) as string[];
       const text = parts.join(" — ");
       if (text.trim()) {
         entries.push({
@@ -115,7 +115,7 @@ function buildSearchIndex(sops: SOP[]): SearchEntry[] {
       }
     });
 
-    const escalationText = [sop.escalation.when, sop.escalation.contact]
+    const escalationText = [sop.escalation.when, sop.escalation.who]
       .filter(Boolean)
       .join(" — ");
     if (escalationText.trim()) {
@@ -130,7 +130,7 @@ function buildSearchIndex(sops: SOP[]): SearchEntry[] {
     }
 
     sop.contacts.forEach((c, i) => {
-      const text = [c.name, c.label, c.reason].filter(Boolean).join(" · ");
+      const text = [c.name, c.role, c.description].filter(Boolean).join(" · ");
       if (text.trim()) {
         entries.push({
           type: "section",
