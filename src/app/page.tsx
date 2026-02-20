@@ -664,10 +664,10 @@ export default function Home() {
       {showAddPanel && (
         <>
           <div
-            className="fixed inset-0 bg-black/25 z-40 transition-opacity duration-300"
+            className="fixed inset-0 bg-black/25 z-40 animate-fade-in"
             onClick={closePanel}
           />
-          <div className="fixed top-0 right-0 bottom-0 w-full max-w-2xl bg-background shadow-2xl z-50 transform transition-transform duration-300 ease-out flex flex-col">
+          <div className="fixed top-0 right-0 bottom-0 w-full max-w-2xl bg-background shadow-2xl z-50 animate-slide-in-right flex flex-col">
             <SopForm
               mode={isEditMode ? "edit" : "create"}
               initialData={editingSOP ?? undefined}

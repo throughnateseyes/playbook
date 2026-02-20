@@ -478,12 +478,14 @@ export default function SopForm({
       if (initial.edgeCases.every((ec) => !ec.title.trim() && !ec.description.trim())) collapsed.add("edgeCases");
       if (!initial.escalationWhen.trim() && !initial.escalationWho.trim()) collapsed.add("escalation");
       if (initial.contacts.every((c) => !c.name.trim())) collapsed.add("contacts");
-      if (initial.referenceMaterials.every((r) => !r.title.trim() && !r.file)) collapsed.add("references");
       return collapsed;
     }
-    return new Set(["edgeCases", "escalation", "contacts", "references"]);
+    return new Set(["edgeCases", "escalation", "contacts"]);
   });
   const scrollRef = useRef<HTMLDivElement>(null);
+  const stepImageInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [stepImageDragging, setStepImageDragging] = useState<number | null>(null);
+  const [showRefDropzone, setShowRefDropzone] = useState(false);
 
   const clearError = useCallback((field: string) => {
     setErrors((prev) => {
@@ -660,7 +662,7 @@ export default function SopForm({
       {/* Scrollable body */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-8">
         {/* ── Basic Information ──────────────────────────────────── */}
-        <section className="pt-8 pb-10">
+        <section className="pt-8 pb-6">
           <div className="space-y-7">
             <div>
               <input
@@ -670,15 +672,15 @@ export default function SopForm({
                   dispatch({ type: "SET_FIELD", field: "title", value: e.target.value });
                   clearError("title");
                 }}
-                aria-label="SOP title"
+                aria-label="SOP name"
                 className="w-full text-2xl font-semibold tracking-tight text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none py-1"
-                placeholder="Untitled procedure"
+                placeholder="Choose SOP name"
               />
               {errors.title ? (
                 <p className="text-xs text-red-500 mt-1.5" data-error>{errors.title}</p>
-              ) : (
-                <p className="text-[11px] text-text-faint mt-1.5">Required</p>
-              )}
+              ) : !form.title.trim() ? (
+                <p className="text-[11px] text-text-faint mt-1.5">Standard operating procedure name required</p>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -692,7 +694,7 @@ export default function SopForm({
                     dispatch({ type: "SET_FIELD", field: "category", value: e.target.value });
                     clearError("category");
                   }}
-                  className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                  className="w-full pl-3.5 pr-10 py-2 rounded-lg border border-border-muted text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
                 >
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -730,8 +732,8 @@ export default function SopForm({
         </section>
 
         {/* ── Steps ─────────────────────────────────────────────── */}
-        <section className="pt-10 pb-10">
-          <div className="flex items-center mb-5">
+        <section className="pt-4 pb-10">
+          <div className="flex items-center justify-between py-3 mb-4">
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Steps</h3>
           </div>
           {errors.steps && <p className="text-xs text-red-500 mb-4" data-error>{errors.steps}</p>}
@@ -739,7 +741,7 @@ export default function SopForm({
             {form.steps.map((step, index) => (
               <div
                 key={index}
-                className={`group/step relative border rounded-lg p-5 transition-all duration-150 ${
+                className={`group/step relative border rounded-lg p-5 transition-all duration-150 animate-fade-in-up ${
                   draggingIndex === index
                     ? "opacity-50 border-border-strong"
                     : dragOverIndex === index && draggingIndex !== null
@@ -785,18 +787,20 @@ export default function SopForm({
                   <XIcon />
                 </button>
                 <div className="flex items-start gap-3 pr-8">
-                  <div
-                    draggable
-                    onDragStart={() => setDraggingIndex(index)}
-                    onDragEnd={() => { setDraggingIndex(null); setDragOverIndex(null); }}
-                    className="flex items-center gap-1 w-10 min-h-[40px] pt-2 justify-center rounded-md cursor-grab active:cursor-grabbing text-text-faint/30 hover:text-text-faint hover:bg-surface-2/60 transition-all duration-150 select-none"
-                    aria-hidden="true"
-                    title="Drag to reorder"
-                  >
-                    <GripVertical size={20} strokeWidth={1.5} />
-                    <span className="text-[12px] font-medium tabular-nums">
+                  <div className="flex flex-col items-center gap-1 pt-1.5">
+                    <span className="text-[13px] font-semibold tabular-nums text-text-muted select-none leading-none">
                       {index + 1}
                     </span>
+                    <div
+                      draggable
+                      onDragStart={() => setDraggingIndex(index)}
+                      onDragEnd={() => { setDraggingIndex(null); setDragOverIndex(null); }}
+                      className="flex items-center justify-center w-7 h-7 cursor-grab active:cursor-grabbing text-text-faint hover:text-text-muted hover:bg-surface-2 rounded transition-all duration-150 select-none"
+                      aria-hidden="true"
+                      title="Drag to reorder"
+                    >
+                      <GripVertical size={16} strokeWidth={1.5} />
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0 space-y-3">
                     <input
@@ -845,7 +849,7 @@ export default function SopForm({
                             </div>
                           )}
                           {visible.has("imageUrl") && (
-                            <div className="mt-3">
+                            <div className="mt-3 animate-fade-in-up">
                               <div className="flex items-center justify-between mb-2">
                                 <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted">Image</label>
                                 <button
@@ -860,17 +864,57 @@ export default function SopForm({
                                   <XIcon />
                                 </button>
                               </div>
+                              <div
+                                onDragOver={(e) => { e.preventDefault(); setStepImageDragging(index); }}
+                                onDragLeave={() => setStepImageDragging(null)}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setStepImageDragging(null);
+                                  const file = e.dataTransfer.files[0];
+                                  if (file && file.type.startsWith("image/")) {
+                                    const url = URL.createObjectURL(file);
+                                    dispatch({ type: "SET_STEP", index, field: "imageUrl", value: url });
+                                  }
+                                }}
+                                onClick={() => stepImageInputRefs.current[index]?.click()}
+                                className={[
+                                  "border border-dashed rounded-lg px-4 py-3 text-center cursor-pointer transition-colors duration-150",
+                                  stepImageDragging === index
+                                    ? "border-accent bg-accent/5"
+                                    : "border-border-muted hover:border-border-strong hover:bg-surface-2/50",
+                                ].join(" ")}
+                              >
+                                <p className="text-xs text-text-muted">
+                                  Drag & drop an image, or{" "}
+                                  <span className="font-medium text-foreground">Browse</span>
+                                </p>
+                                <input
+                                  ref={(el) => { stepImageInputRefs.current[index] = el; }}
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const url = URL.createObjectURL(file);
+                                      dispatch({ type: "SET_STEP", index, field: "imageUrl", value: url });
+                                    }
+                                    e.target.value = "";
+                                  }}
+                                />
+                              </div>
                               <input
                                 type="text"
                                 value={step.imageUrl}
                                 onChange={(e) => dispatch({ type: "SET_STEP", index, field: "imageUrl", value: e.target.value })}
-                                className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
-                                placeholder="Image URL"
+                                className="w-full mt-2 px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                                placeholder="Or paste image URL"
                               />
                             </div>
                           )}
                           {visible.has("script") && (
-                            <div className="mt-3">
+                            <div className="mt-3 animate-fade-in-up">
                               <div className="flex items-center justify-between mb-2">
                                 <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted">Script</label>
                                 <button
@@ -902,22 +946,27 @@ export default function SopForm({
               </div>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={() => dispatch({ type: "ADD_STEP" })}
-            className="mt-3 px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
-          >
-            + Add step
-          </button>
+          <div className="flex justify-end mt-3">
+            <button
+              type="button"
+              onClick={() => dispatch({ type: "ADD_STEP" })}
+              className="px-3 py-1.5 text-xs font-medium text-text-secondary border border-border-muted rounded-lg hover:bg-surface-2 hover:text-foreground hover:border-border-strong hover:shadow-sm active:bg-surface-3 transition-all duration-150"
+            >
+              + Add step
+            </button>
+          </div>
         </section>
 
         {/* ── Edge Cases ─────────────────────────────────────────── */}
-        <section className={`pt-8 ${collapsedSections.has("edgeCases") ? "pb-4" : "pb-10"}`}>
+        <section className={`pt-4 ${collapsedSections.has("edgeCases") ? "pb-0" : "pb-8"}`}>
           <button
             type="button"
             onClick={() => toggleSection("edgeCases")}
-            className="flex w-full items-center justify-between py-2 mb-4 rounded-lg hover:shadow-sm cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="group/header relative flex w-full items-center justify-between py-3 cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-lg"
           >
+            {collapsedSections.has("edgeCases") && (
+              <span className="absolute -inset-x-2 inset-y-0 rounded-lg bg-transparent group-hover/header:bg-surface-2 transition-colors duration-150 -z-10" />
+            )}
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Edge Cases</h3>
             <ChevronDown
               size={16}
@@ -927,12 +976,13 @@ export default function SopForm({
               }`}
             />
           </button>
+          {collapsedSections.has("edgeCases") && <div className="h-px bg-border-muted mt-1" />}
           {!collapsedSections.has("edgeCases") && (
-            <div>
+            <div className="animate-accordion-open mt-4">
               <div className="space-y-3">
                 {form.edgeCases.map((edge, index) => (
-                  <div key={index} className="group border border-border-muted rounded-lg p-4">
-                    <div className="flex items-start justify-between border-b border-border-muted pb-2 mb-2">
+                  <div key={index} className="group border border-border-muted rounded-lg p-4 animate-fade-in-up">
+                    <div className="flex items-start justify-between border-b border-border-muted pb-2 mb-2 -mx-4 px-4">
                       <input
                         type="text"
                         value={edge.title}
@@ -959,24 +1009,29 @@ export default function SopForm({
                   </div>
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={() => dispatch({ type: "ADD_EDGE_CASE" })}
-                className="mt-3 px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
-              >
-                + Add
-              </button>
+              <div className="flex justify-end mt-3">
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: "ADD_EDGE_CASE" })}
+                  className="px-3 py-1.5 text-xs font-medium text-text-secondary border border-border-muted rounded-lg hover:bg-surface-2 hover:text-foreground hover:border-border-strong hover:shadow-sm active:bg-surface-3 transition-all duration-150"
+                >
+                  + Add edge case
+                </button>
+              </div>
             </div>
           )}
         </section>
 
         {/* ── Escalation ────────────────────────────────────────── */}
-        <section className={`pt-8 ${collapsedSections.has("escalation") ? "pb-4" : "pb-10"}`}>
+        <section className={`pt-4 ${collapsedSections.has("escalation") ? "pb-0" : "pb-8"}`}>
           <button
             type="button"
             onClick={() => toggleSection("escalation")}
-            className="flex w-full items-center justify-between py-2 mb-4 rounded-lg hover:shadow-sm cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="group/header relative flex w-full items-center justify-between py-3 cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-lg"
           >
+            {collapsedSections.has("escalation") && (
+              <span className="absolute -inset-x-2 inset-y-0 rounded-lg bg-transparent group-hover/header:bg-surface-2 transition-colors duration-150 -z-10" />
+            )}
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Escalation</h3>
             <ChevronDown
               size={16}
@@ -986,8 +1041,9 @@ export default function SopForm({
               }`}
             />
           </button>
+          {collapsedSections.has("escalation") && <div className="h-px bg-border-muted mt-1" />}
           {!collapsedSections.has("escalation") && (
-            <div>
+            <div className="animate-accordion-open mt-4">
               <p className="text-[11px] text-text-faint mb-5">Only include escalation when it requires a different owner or a safety/financial threshold.</p>
               <div className="rounded-lg border border-border-muted p-5 space-y-4">
                 <div>
@@ -1016,12 +1072,15 @@ export default function SopForm({
         </section>
 
         {/* ── Contacts ──────────────────────────────────────────── */}
-        <section className={`pt-8 ${collapsedSections.has("contacts") ? "pb-4" : "pb-10"}`}>
+        <section className={`pt-4 ${collapsedSections.has("contacts") ? "pb-0" : "pb-8"}`}>
           <button
             type="button"
             onClick={() => toggleSection("contacts")}
-            className="flex w-full items-center justify-between py-2 mb-4 rounded-lg hover:shadow-sm cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="group/header relative flex w-full items-center justify-between py-3 cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-lg"
           >
+            {collapsedSections.has("contacts") && (
+              <span className="absolute -inset-x-2 inset-y-0 rounded-lg bg-transparent group-hover/header:bg-surface-2 transition-colors duration-150 -z-10" />
+            )}
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Contacts</h3>
             <ChevronDown
               size={16}
@@ -1031,14 +1090,15 @@ export default function SopForm({
               }`}
             />
           </button>
+          {collapsedSections.has("contacts") && <div className="h-px bg-border-muted mt-1" />}
           {!collapsedSections.has("contacts") && (
-            <div>
+            <div className="animate-accordion-open mt-4">
               <div className="space-y-3">
                 {form.contacts.map((contact, index) => {
                 const visible = visibleContactFields.get(index) ?? new Set<string>();
                 const allDetailShown = CONTACT_DETAIL_OPTIONS.every((opt) => visible.has(opt.key));
                 return (
-                  <div key={index} className="group relative border border-border-muted rounded-lg p-4">
+                  <div key={index} className="group relative border border-border-muted rounded-lg p-4 animate-fade-in-up">
                     <button
                       type="button"
                       onClick={() => handleRemoveContact(index)}
@@ -1153,106 +1213,106 @@ export default function SopForm({
                 );
               })}
               </div>
-              <button
-                type="button"
-                onClick={() => dispatch({ type: "ADD_CONTACT" })}
-                className="mt-3 px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
-              >
-                + Add
-              </button>
+              <div className="flex justify-end mt-3">
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: "ADD_CONTACT" })}
+                  className="px-3 py-1.5 text-xs font-medium text-text-secondary border border-border-muted rounded-lg hover:bg-surface-2 hover:text-foreground hover:border-border-strong hover:shadow-sm active:bg-surface-3 transition-all duration-150"
+                >
+                  + Add contact
+                </button>
+              </div>
             </div>
           )}
         </section>
 
         {/* ── Reference Materials ────────────────────────────────── */}
-        <section className={`pt-8 ${collapsedSections.has("references") ? "pb-4" : "pb-10"}`}>
-          <button
-            type="button"
-            onClick={() => toggleSection("references")}
-            className="flex w-full items-center justify-between py-2 mb-4 rounded-lg hover:shadow-sm cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
+        <section className="pt-4 pb-8">
+          <div className="flex items-center justify-between py-3 mb-4">
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Reference Materials</h3>
-            <ChevronDown
-              size={16}
-              strokeWidth={2}
-              className={`text-text-faint transition-transform duration-200 ${
-                collapsedSections.has("references") ? "" : "rotate-180"
-              }`}
-            />
-          </button>
-          {!collapsedSections.has("references") && (
-            <div className="mt-3">
-              {/* Dropzone */}
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={[
-                  "border-2 border-dashed rounded-lg px-6 py-8 text-center cursor-pointer transition-colors duration-150",
-                  isDragging
-                    ? "border-accent bg-accent/5"
-                    : "border-border-muted hover:border-border-strong hover:bg-surface-2/50",
-                ].join(" ")}
-              >
-                <UploadCloud size={20} strokeWidth={1.5} className="mx-auto mb-2 text-text-faint" />
-                <p className="text-sm text-text-muted">
-                  Drop files here or{" "}
-                  <span className="font-medium text-foreground">Browse files</span>
-                </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileSelect}
-                />
-              </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowRefDropzone(true);
+                fileInputRef.current?.click();
+              }}
+              className="px-3 py-1.5 text-xs font-medium text-text-secondary border border-border-muted rounded-lg hover:bg-surface-2 hover:text-foreground hover:border-border-strong hover:shadow-sm active:bg-surface-3 transition-all duration-150"
+            >
+              + Add material
+            </button>
+          </div>
 
-              {/* File list */}
-              {form.referenceMaterials.some((r) => r.title.trim() || r.file) && (
-                <div className="space-y-2 mt-4">
-                  {form.referenceMaterials.map((ref, index) =>
-                    !ref.title.trim() && !ref.file ? null : (
-                      <div key={index} className="group relative flex items-start gap-3 border border-border-muted rounded-lg p-3">
-                        <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center">
-                          <FileText size={16} strokeWidth={1.5} className="text-text-faint" />
-                        </div>
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={ref.title}
-                              onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "title", value: e.target.value })}
-                              className="flex-1 min-w-0 text-sm font-medium text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
-                              placeholder="Document title"
-                            />
-                            {ref.fileName && (
-                              <span className="flex-shrink-0 text-[11px] text-text-faint truncate max-w-[140px]">
-                                {ref.fileName}
-                              </span>
-                            )}
-                          </div>
-                          <input
-                            type="text"
-                            value={ref.caption}
-                            onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "caption", value: e.target.value })}
-                            className="w-full text-sm text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
-                            placeholder="Caption (optional)"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => dispatch({ type: "REMOVE_REFERENCE", index })}
-                          className="absolute top-3 right-3 p-1 hover:bg-surface-2 rounded-lg text-text-faint hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-150"
-                          title="Remove reference"
-                        >
-                          <XIcon />
-                        </button>
+          {/* Dropzone — shown on demand */}
+          {showRefDropzone && (
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={[
+                "border-2 border-dashed rounded-lg px-6 py-8 text-center cursor-pointer transition-colors duration-150 mb-4",
+                isDragging
+                  ? "border-accent bg-accent/5"
+                  : "border-border-muted hover:border-border-strong hover:bg-surface-2/50",
+              ].join(" ")}
+            >
+              <UploadCloud size={20} strokeWidth={1.5} className="mx-auto mb-2 text-text-faint" />
+              <p className="text-sm text-text-muted">
+                Drop files here or{" "}
+                <span className="font-medium text-foreground">Browse files</span>
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+            </div>
+          )}
+
+          {/* File list */}
+          {form.referenceMaterials.some((r) => r.title.trim() || r.file) && (
+            <div className="space-y-2">
+              {form.referenceMaterials.map((ref, index) =>
+                !ref.title.trim() && !ref.file ? null : (
+                  <div key={index} className="group relative flex items-start gap-3 border border-border-muted rounded-lg p-3">
+                    <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center">
+                      <FileText size={16} strokeWidth={1.5} className="text-text-faint" />
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={ref.title}
+                          onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "title", value: e.target.value })}
+                          className="flex-1 min-w-0 text-sm font-medium text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
+                          placeholder="Document title"
+                        />
+                        {ref.fileName && (
+                          <span className="flex-shrink-0 text-[11px] text-text-faint truncate max-w-[140px]">
+                            {ref.fileName}
+                          </span>
+                        )}
                       </div>
-                    )
-                  )}
-                </div>
+                      <input
+                        type="text"
+                        value={ref.caption}
+                        onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "caption", value: e.target.value })}
+                        className="w-full text-sm text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
+                        placeholder="Caption (optional)"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => dispatch({ type: "REMOVE_REFERENCE", index })}
+                      className="absolute top-3 right-3 p-1 hover:bg-surface-2 rounded-lg text-text-faint hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-150"
+                      title="Remove reference"
+                    >
+                      <XIcon />
+                    </button>
+                  </div>
+                )
               )}
             </div>
           )}
