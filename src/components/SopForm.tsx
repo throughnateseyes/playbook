@@ -662,7 +662,7 @@ export default function SopForm({
       {/* Scrollable body */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-8">
         {/* ── Basic Information ──────────────────────────────────── */}
-        <section className="pt-8 pb-6">
+        <section className="pt-8 pb-4">
           <div className="space-y-7">
             <div>
               <input
@@ -678,9 +678,11 @@ export default function SopForm({
               />
               {errors.title ? (
                 <p className="text-xs text-red-500 mt-1.5" data-error>{errors.title}</p>
-              ) : !form.title.trim() ? (
-                <p className="text-[11px] text-text-faint mt-1.5">Standard operating procedure name required</p>
-              ) : null}
+              ) : (
+                <p className={`text-[11px] text-text-faint mt-1.5 transition-opacity duration-150 ${form.title.trim() ? "opacity-0" : "opacity-100"}`}>
+                  SOP name required
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -694,7 +696,7 @@ export default function SopForm({
                     dispatch({ type: "SET_FIELD", field: "category", value: e.target.value });
                     clearError("category");
                   }}
-                  className="w-full pl-3.5 pr-10 py-2 rounded-lg border border-border-muted text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                  className="w-full pl-3.5 pr-12 py-2 rounded-lg border border-border-muted text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
                 >
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -787,19 +789,19 @@ export default function SopForm({
                   <XIcon />
                 </button>
                 <div className="flex items-start gap-3 pr-8">
-                  <div className="flex flex-col items-center gap-1 pt-1.5">
-                    <span className="text-[13px] font-semibold tabular-nums text-text-muted select-none leading-none">
+                  <div className="relative self-stretch flex items-center justify-center min-w-[2rem]">
+                    <span className="absolute top-1.5 left-1/2 -translate-x-1/2 text-[13px] font-semibold tabular-nums text-text-muted select-none leading-none">
                       {index + 1}
                     </span>
                     <div
                       draggable
                       onDragStart={() => setDraggingIndex(index)}
                       onDragEnd={() => { setDraggingIndex(null); setDragOverIndex(null); }}
-                      className="flex items-center justify-center w-7 h-7 cursor-grab active:cursor-grabbing text-text-faint hover:text-text-muted hover:bg-surface-2 rounded transition-all duration-150 select-none"
+                      className="flex items-center justify-center w-8 h-8 cursor-grab active:cursor-grabbing text-text-muted hover:text-text-secondary hover:bg-surface-2 rounded-md transition-all duration-150 select-none"
                       aria-hidden="true"
                       title="Drag to reorder"
                     >
-                      <GripVertical size={16} strokeWidth={1.5} />
+                      <GripVertical size={18} strokeWidth={1.5} />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0 space-y-3">
@@ -964,9 +966,7 @@ export default function SopForm({
             onClick={() => toggleSection("edgeCases")}
             className="group/header relative flex w-full items-center justify-between py-3 cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-lg"
           >
-            {collapsedSections.has("edgeCases") && (
-              <span className="absolute -inset-x-2 inset-y-0 rounded-lg bg-transparent group-hover/header:bg-surface-2 transition-colors duration-150 -z-10" />
-            )}
+            <span className="absolute -inset-x-2 inset-y-0 rounded-lg bg-transparent group-hover/header:bg-surface-2 transition-colors duration-150 -z-10" />
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Edge Cases</h3>
             <ChevronDown
               size={16}
@@ -976,9 +976,9 @@ export default function SopForm({
               }`}
             />
           </button>
-          {collapsedSections.has("edgeCases") && <div className="h-px bg-border-muted mt-1" />}
+          <div className="h-px bg-border-muted mt-1" />
           {!collapsedSections.has("edgeCases") && (
-            <div className="animate-accordion-open mt-4">
+            <div className="animate-accordion-open mt-3">
               <div className="space-y-3">
                 {form.edgeCases.map((edge, index) => (
                   <div key={index} className="group border border-border-muted rounded-lg p-4 animate-fade-in-up">
@@ -1029,9 +1029,7 @@ export default function SopForm({
             onClick={() => toggleSection("escalation")}
             className="group/header relative flex w-full items-center justify-between py-3 cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-lg"
           >
-            {collapsedSections.has("escalation") && (
-              <span className="absolute -inset-x-2 inset-y-0 rounded-lg bg-transparent group-hover/header:bg-surface-2 transition-colors duration-150 -z-10" />
-            )}
+            <span className="absolute -inset-x-2 inset-y-0 rounded-lg bg-transparent group-hover/header:bg-surface-2 transition-colors duration-150 -z-10" />
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Escalation</h3>
             <ChevronDown
               size={16}
@@ -1041,9 +1039,9 @@ export default function SopForm({
               }`}
             />
           </button>
-          {collapsedSections.has("escalation") && <div className="h-px bg-border-muted mt-1" />}
+          <div className="h-px bg-border-muted mt-1" />
           {!collapsedSections.has("escalation") && (
-            <div className="animate-accordion-open mt-4">
+            <div className="animate-accordion-open mt-3">
               <p className="text-[11px] text-text-faint mb-5">Only include escalation when it requires a different owner or a safety/financial threshold.</p>
               <div className="rounded-lg border border-border-muted p-5 space-y-4">
                 <div>
@@ -1078,9 +1076,7 @@ export default function SopForm({
             onClick={() => toggleSection("contacts")}
             className="group/header relative flex w-full items-center justify-between py-3 cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-lg"
           >
-            {collapsedSections.has("contacts") && (
-              <span className="absolute -inset-x-2 inset-y-0 rounded-lg bg-transparent group-hover/header:bg-surface-2 transition-colors duration-150 -z-10" />
-            )}
+            <span className="absolute -inset-x-2 inset-y-0 rounded-lg bg-transparent group-hover/header:bg-surface-2 transition-colors duration-150 -z-10" />
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Contacts</h3>
             <ChevronDown
               size={16}
@@ -1090,9 +1086,9 @@ export default function SopForm({
               }`}
             />
           </button>
-          {collapsedSections.has("contacts") && <div className="h-px bg-border-muted mt-1" />}
+          <div className="h-px bg-border-muted mt-1" />
           {!collapsedSections.has("contacts") && (
-            <div className="animate-accordion-open mt-4">
+            <div className="animate-accordion-open mt-3">
               <div className="space-y-3">
                 {form.contacts.map((contact, index) => {
                 const visible = visibleContactFields.get(index) ?? new Set<string>();
@@ -1228,8 +1224,10 @@ export default function SopForm({
 
         {/* ── Reference Materials ────────────────────────────────── */}
         <section className="pt-4 pb-8">
-          <div className="flex items-center justify-between py-3 mb-4">
+          <div className="py-3">
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Reference Materials</h3>
+          </div>
+          <div className="mb-4">
             <button
               type="button"
               onClick={() => {
