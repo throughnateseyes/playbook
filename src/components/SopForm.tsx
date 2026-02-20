@@ -1,6 +1,6 @@
                                                                                                                                                                                                                                                                                                                                                                                                                                         "use client";
 
-import React, { useReducer, useState, useCallback, useRef } from "react";
+import React, { useReducer, useState, useCallback, useRef, useEffect } from "react";
 import { ChevronDown, FileText, GripVertical, UploadCloud } from "lucide-react";
 import type { SOP } from "../types";
 import { normalizeSOP } from "../lib/normalize";
@@ -25,6 +25,8 @@ interface ContactFormData {
   role: string;
   department: string;
   description: string;
+  email: string;
+  phone: string;
   avatarUrl: string;
   teamsUrl: string;
   linkedinUrl: string;
@@ -63,7 +65,7 @@ function emptyEdgeCase(): EdgeCaseFormData {
 }
 
 function emptyContact(): ContactFormData {
-  return { name: "", role: "", department: "", description: "", avatarUrl: "", teamsUrl: "", linkedinUrl: "" };
+  return { name: "", role: "", department: "", description: "", email: "", phone: "", avatarUrl: "", teamsUrl: "", linkedinUrl: "" };
 }
 
 function emptyReferenceMaterial(): ReferenceMaterialFormData {
@@ -110,6 +112,8 @@ function sopToFormData(sop: SOP): SOPFormData {
           role: c.role,
           department: c.department,
           description: c.description ?? "",
+          email: c.email ?? "",
+          phone: c.phone ?? "",
           avatarUrl: c.avatarUrl ?? "",
           teamsUrl: c.teamsUrl ?? "",
           linkedinUrl: c.linkedinUrl ?? "",
@@ -153,6 +157,8 @@ function formDataToSOP(form: SOPFormData, existingId?: string): SOP {
         role: c.role,
         department: c.department,
         ...(c.description.trim() ? { description: c.description } : {}),
+        ...(c.email.trim() ? { email: c.email } : {}),
+        ...(c.phone.trim() ? { phone: c.phone } : {}),
         ...(c.avatarUrl.trim() ? { avatarUrl: c.avatarUrl } : {}),
         ...(c.teamsUrl.trim() ? { teamsUrl: c.teamsUrl } : {}),
         ...(c.linkedinUrl.trim() ? { linkedinUrl: c.linkedinUrl } : {}),
@@ -176,6 +182,7 @@ type FormAction =
   | { type: "ADD_STEP" }
   | { type: "REMOVE_STEP"; index: number }
   | { type: "MOVE_STEP"; index: number; direction: "up" | "down" }
+  | { type: "REORDER_STEP"; from: number; to: number }
   | { type: "SET_EDGE_CASE"; index: number; field: keyof EdgeCaseFormData; value: string }
   | { type: "ADD_EDGE_CASE" }
   | { type: "REMOVE_EDGE_CASE"; index: number }
@@ -207,6 +214,13 @@ function formReducer(state: SOPFormData, action: FormAction): SOPFormData {
       const target = action.direction === "up" ? action.index - 1 : action.index + 1;
       if (target < 0 || target >= steps.length) return state;
       [steps[action.index], steps[target]] = [steps[target], steps[action.index]];
+      return { ...state, steps };
+    }
+    case "REORDER_STEP": {
+      if (action.from === action.to) return state;
+      const steps = [...state.steps];
+      const [moved] = steps.splice(action.from, 1);
+      steps.splice(action.to, 0, moved);
       return { ...state, steps };
     }
 
@@ -281,6 +295,132 @@ function CloseIcon() {
   );
 }
 
+// ── Popover components ───────────────────────────────────────────────────────
+
+function ImageIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+      <rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="1.25" />
+      <circle cx="5.5" cy="5.5" r="1.25" stroke="currentColor" strokeWidth="1.25" />
+      <path d="M1.5 11l3.5-3.5 2.5 2.5 2-1.5L14.5 13" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CodeIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+      <polyline points="4,4 1,8 4,12" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <polyline points="12,4 15,8 12,12" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <line x1="9" y1="2" x2="7" y2="14" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function StepAttachmentPopover({
+  stepIndex,
+  visibleFields,
+  onSelect,
+  onClose,
+}: {
+  stepIndex: number;
+  visibleFields: Set<string>;
+  onSelect: (stepIndex: number, field: string) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  const options = [
+    { key: "imageUrl", label: "Add Photo", icon: <ImageIcon /> },
+    { key: "script", label: "Add Script", icon: <CodeIcon /> },
+  ].filter((opt) => !visibleFields.has(opt.key));
+
+  if (options.length === 0) return null;
+
+  return (
+    <div
+      ref={ref}
+      className="absolute left-0 top-full mt-1.5 z-20 min-w-[160px] rounded-xl border border-border-muted bg-surface shadow-lg py-1"
+    >
+      {options.map((opt) => (
+        <button
+          key={opt.key}
+          type="button"
+          onClick={() => onSelect(stepIndex, opt.key)}
+          className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-foreground hover:bg-surface-2 transition-colors duration-100"
+        >
+          <span className="text-text-muted">{opt.icon}</span>
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const CONTACT_DETAIL_OPTIONS = [
+  { key: "teamsUrl", label: "Teams" },
+  { key: "email", label: "Email" },
+  { key: "phone", label: "Phone" },
+  { key: "linkedinUrl", label: "LinkedIn" },
+  { key: "avatarUrl", label: "Avatar URL" },
+] as const;
+
+function ContactDetailPopover({
+  contactIndex,
+  visibleFields,
+  onSelect,
+  onClose,
+}: {
+  contactIndex: number;
+  visibleFields: Set<string>;
+  onSelect: (contactIndex: number, field: string) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  const options = CONTACT_DETAIL_OPTIONS.filter((opt) => !visibleFields.has(opt.key));
+
+  if (options.length === 0) return null;
+
+  return (
+    <div
+      ref={ref}
+      className="absolute left-0 top-full mt-1.5 z-20 min-w-[160px] rounded-xl border border-border-muted bg-surface shadow-lg py-1"
+    >
+      {options.map((opt) => (
+        <button
+          key={opt.key}
+          type="button"
+          onClick={() => onSelect(contactIndex, opt.key)}
+          className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-foreground hover:bg-surface-2 transition-colors duration-100"
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export interface SopFormProps {
@@ -301,22 +441,47 @@ export default function SopForm({
   const initial = initialData ? sopToFormData(initialData) : emptyFormData(categories[0] ?? "Operations");
   const [form, dispatch] = useReducer(formReducer, initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(() => {
-    if (!initialData) return new Set<number>();
-    // Auto-expand steps that have optional fields filled
-    const expanded = new Set<number>();
-    initial.steps.forEach((s, i) => {
-      if (s.imageUrl || s.script) expanded.add(i);
-    });
-    return expanded;
+  const [visibleStepFields, setVisibleStepFields] = useState<Map<number, Set<string>>>(() => {
+    const map = new Map<number, Set<string>>();
+    if (initialData) {
+      initial.steps.forEach((s, i) => {
+        const fields = new Set<string>();
+        if (s.imageUrl) fields.add("imageUrl");
+        if (s.script) fields.add("script");
+        if (fields.size > 0) map.set(i, fields);
+      });
+    }
+    return map;
   });
-  const [expandedContacts, setExpandedContacts] = useState<Set<number>>(() => {
-    if (!initialData) return new Set<number>();
-    const expanded = new Set<number>();
-    initial.contacts.forEach((c, i) => {
-      if (c.avatarUrl || c.teamsUrl || c.linkedinUrl) expanded.add(i);
-    });
-    return expanded;
+  const [openStepPopover, setOpenStepPopover] = useState<number | null>(null);
+  const [visibleContactFields, setVisibleContactFields] = useState<Map<number, Set<string>>>(() => {
+    const map = new Map<number, Set<string>>();
+    if (initialData) {
+      initial.contacts.forEach((c, i) => {
+        const fields = new Set<string>();
+        if (c.email) fields.add("email");
+        if (c.phone) fields.add("phone");
+        if (c.avatarUrl) fields.add("avatarUrl");
+        if (c.teamsUrl) fields.add("teamsUrl");
+        if (c.linkedinUrl) fields.add("linkedinUrl");
+        if (fields.size > 0) map.set(i, fields);
+      });
+    }
+    return map;
+  });
+  const [openContactPopover, setOpenContactPopover] = useState<number | null>(null);
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
+    if (initialData) {
+      const collapsed = new Set<string>();
+      if (initial.edgeCases.every((ec) => !ec.title.trim() && !ec.description.trim())) collapsed.add("edgeCases");
+      if (!initial.escalationWhen.trim() && !initial.escalationWho.trim()) collapsed.add("escalation");
+      if (initial.contacts.every((c) => !c.name.trim())) collapsed.add("contacts");
+      if (initial.referenceMaterials.every((r) => !r.title.trim() && !r.file)) collapsed.add("references");
+      return collapsed;
+    }
+    return new Set(["edgeCases", "escalation", "contacts", "references"]);
   });
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -329,23 +494,94 @@ export default function SopForm({
     });
   }, []);
 
-  const toggleStepExpand = useCallback((index: number) => {
-    setExpandedSteps((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
+  const showStepField = useCallback((stepIndex: number, field: string) => {
+    setVisibleStepFields((prev) => {
+      const next = new Map(prev);
+      const fields = new Set(prev.get(stepIndex) ?? []);
+      fields.add(field);
+      next.set(stepIndex, fields);
+      return next;
+    });
+    setOpenStepPopover(null);
+  }, []);
+
+  const hideStepField = useCallback((stepIndex: number, field: string) => {
+    setVisibleStepFields((prev) => {
+      const next = new Map(prev);
+      const fields = new Set(prev.get(stepIndex) ?? []);
+      fields.delete(field);
+      if (fields.size === 0) next.delete(stepIndex);
+      else next.set(stepIndex, fields);
       return next;
     });
   }, []);
 
-  const toggleContactExpand = useCallback((index: number) => {
-    setExpandedContacts((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
+  const handleRemoveStep = useCallback((index: number) => {
+    dispatch({ type: "REMOVE_STEP", index });
+    setVisibleStepFields((prev) => {
+      const next = new Map<number, Set<string>>();
+      for (const [k, v] of prev) {
+        if (k < index) next.set(k, v);
+        else if (k > index) next.set(k - 1, v);
+      }
+      return next;
+    });
+    setOpenStepPopover(null);
+  }, []);
+
+  const showContactField = useCallback((contactIndex: number, field: string) => {
+    setVisibleContactFields((prev) => {
+      const next = new Map(prev);
+      const fields = new Set(prev.get(contactIndex) ?? []);
+      fields.add(field);
+      next.set(contactIndex, fields);
+      return next;
+    });
+    setOpenContactPopover(null);
+  }, []);
+
+  const hideContactField = useCallback((contactIndex: number, field: string) => {
+    setVisibleContactFields((prev) => {
+      const next = new Map(prev);
+      const fields = new Set(prev.get(contactIndex) ?? []);
+      fields.delete(field);
+      if (fields.size === 0) next.delete(contactIndex);
+      else next.set(contactIndex, fields);
       return next;
     });
   }, []);
+
+  const handleRemoveContact = useCallback((index: number) => {
+    dispatch({ type: "REMOVE_CONTACT", index });
+    setVisibleContactFields((prev) => {
+      const next = new Map<number, Set<string>>();
+      for (const [k, v] of prev) {
+        if (k < index) next.set(k, v);
+        else if (k > index) next.set(k - 1, v);
+      }
+      return next;
+    });
+    setOpenContactPopover(null);
+  }, []);
+
+  const toggleSection = useCallback((section: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      const wasCollapsed = next.has(section);
+      if (wasCollapsed) {
+        next.delete(section);
+        // Auto-add a starter item when expanding an empty section
+        if (section === "edgeCases" && form.edgeCases.length === 0) {
+          dispatch({ type: "ADD_EDGE_CASE" });
+        } else if (section === "contacts" && form.contacts.length === 0) {
+          dispatch({ type: "ADD_CONTACT" });
+        }
+      } else {
+        next.add(section);
+      }
+      return next;
+    });
+  }, [form.edgeCases.length, form.contacts.length]);
 
   // ── File upload (Reference Materials) ──
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -424,7 +660,7 @@ export default function SopForm({
       {/* Scrollable body */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-8">
         {/* ── Basic Information ──────────────────────────────────── */}
-        <section className="pt-10 pb-12">
+        <section className="pt-8 pb-10">
           <div className="space-y-7">
             <div>
               <input
@@ -475,7 +711,6 @@ export default function SopForm({
                   className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
                   placeholder="e.g., Urgent, After-Hours"
                 />
-                <p className="mt-1.5 text-[11px] text-text-faint">Comma-separated</p>
               </div>
             </div>
 
@@ -495,25 +730,74 @@ export default function SopForm({
         </section>
 
         {/* ── Steps ─────────────────────────────────────────────── */}
-        <section className="border-t border-border-muted pt-7 pb-9">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="ty-section-label">Steps</h3>
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "ADD_STEP" })}
-              className="px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
-            >
-              + Add step
-            </button>
+        <section className="pt-10 pb-10">
+          <div className="flex items-center mb-5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Steps</h3>
           </div>
           {errors.steps && <p className="text-xs text-red-500 mb-4" data-error>{errors.steps}</p>}
           <div className="space-y-3">
             {form.steps.map((step, index) => (
-              <div key={index} className="group/step border border-border-muted rounded-lg p-5">
-                <div className="flex items-start gap-3">
-                  <span className="text-[12px] font-medium text-text-faint tabular-nums w-5 text-right pt-2.5 select-none">
-                    {index + 1}
-                  </span>
+              <div
+                key={index}
+                className={`group/step relative border rounded-lg p-5 transition-all duration-150 ${
+                  draggingIndex === index
+                    ? "opacity-50 border-border-strong"
+                    : dragOverIndex === index && draggingIndex !== null
+                    ? "border-t-2 border-accent"
+                    : "border-border-muted"
+                }`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (draggingIndex !== null && draggingIndex !== index) {
+                    setDragOverIndex(index);
+                  }
+                }}
+                onDragLeave={() => setDragOverIndex(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggingIndex !== null && draggingIndex !== index) {
+                    dispatch({ type: "REORDER_STEP", from: draggingIndex, to: index });
+                    // Re-index visible step fields after reorder
+                    setVisibleStepFields((prev) => {
+                      const arr = Array.from(prev.entries()).sort((a, b) => a[0] - b[0]);
+                      const reordered = arr.map(([, v]) => v);
+                      const item = reordered[draggingIndex];
+                      if (item !== undefined) {
+                        reordered.splice(draggingIndex, 1);
+                        reordered.splice(index, 0, item);
+                      }
+                      const next = new Map<number, Set<string>>();
+                      reordered.forEach((v, i) => { if (v && v.size > 0) next.set(i, v); });
+                      return next;
+                    });
+                  }
+                  setDraggingIndex(null);
+                  setDragOverIndex(null);
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleRemoveStep(index)}
+                  disabled={form.steps.length === 1}
+                  className="absolute top-4 right-4 p-1 rounded-lg text-text-faint hover:text-foreground hover:bg-surface-2 opacity-0 group-hover/step:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150"
+                  title="Remove step"
+                >
+                  <XIcon />
+                </button>
+                <div className="flex items-start gap-3 pr-8">
+                  <div
+                    draggable
+                    onDragStart={() => setDraggingIndex(index)}
+                    onDragEnd={() => { setDraggingIndex(null); setDragOverIndex(null); }}
+                    className="flex items-center gap-1 w-10 min-h-[40px] pt-2 justify-center rounded-md cursor-grab active:cursor-grabbing text-text-faint/30 hover:text-text-faint hover:bg-surface-2/60 transition-all duration-150 select-none"
+                    aria-hidden="true"
+                    title="Drag to reorder"
+                  >
+                    <GripVertical size={20} strokeWidth={1.5} />
+                    <span className="text-[12px] font-medium tabular-nums">
+                      {index + 1}
+                    </span>
+                  </div>
                   <div className="flex-1 min-w-0 space-y-3">
                     <input
                       type="text"
@@ -523,7 +807,7 @@ export default function SopForm({
                         clearError("steps");
                       }}
                       className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
-                      placeholder="Step title (optional)"
+                      placeholder="Step title"
                     />
                     <textarea
                       value={step.text}
@@ -535,314 +819,440 @@ export default function SopForm({
                       className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background resize-none"
                       placeholder="Detailed instructions for this step"
                     />
-                    <button
-                      type="button"
-                      onClick={() => toggleStepExpand(index)}
-                      className="flex items-center gap-1 text-[11px] font-medium text-text-muted hover:text-foreground transition-colors mt-3"
-                    >
-                      <ChevronDown
-                        size={13}
-                        strokeWidth={2}
-                        className={`transition-transform duration-150 ${expandedSteps.has(index) ? "rotate-180" : ""}`}
-                      />
-                      {expandedSteps.has(index) ? "Hide attachments" : "Attachments"}
-                    </button>
-                    {expandedSteps.has(index) && (
-                      <div className="space-y-3 pt-1">
-                        <div>
-                          <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">Image</label>
-                          <input
-                            type="text"
-                            value={step.imageUrl}
-                            onChange={(e) => dispatch({ type: "SET_STEP", index, field: "imageUrl", value: e.target.value })}
-                            className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
-                            placeholder="Image URL"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">Script</label>
-                          <textarea
-                            value={step.script}
-                            onChange={(e) => dispatch({ type: "SET_STEP", index, field: "script", value: e.target.value })}
-                            rows={3}
-                            className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background font-mono resize-none"
-                            placeholder="Script / code block"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-center gap-1 pt-1.5">
-                    <span
-                      className="p-1 text-text-faint/40 group-hover/step:text-text-faint cursor-grab transition-colors duration-150"
-                      aria-hidden="true"
-                      title="Drag to reorder"
-                    >
-                      <GripVertical size={16} strokeWidth={1.75} />
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => dispatch({ type: "REMOVE_STEP", index })}
-                      disabled={form.steps.length === 1}
-                      className="p-1 rounded-lg text-text-faint hover:text-foreground hover:bg-surface-2 opacity-0 group-hover/step:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150"
-                      title="Remove step"
-                    >
-                      <XIcon />
-                    </button>
+                    {/* Attachment popover trigger + individually revealed fields */}
+                    {(() => {
+                      const visible = visibleStepFields.get(index) ?? new Set<string>();
+                      const allShown = visible.has("imageUrl") && visible.has("script");
+                      return (
+                        <>
+                          {!allShown && (
+                            <div className="relative mt-3">
+                              <button
+                                type="button"
+                                onClick={() => setOpenStepPopover(openStepPopover === index ? null : index)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-text-muted border border-border-muted rounded-full hover:bg-surface-2 hover:text-foreground transition-colors duration-150"
+                              >
+                                + Add attachment
+                              </button>
+                              {openStepPopover === index && (
+                                <StepAttachmentPopover
+                                  stepIndex={index}
+                                  visibleFields={visible}
+                                  onSelect={showStepField}
+                                  onClose={() => setOpenStepPopover(null)}
+                                />
+                              )}
+                            </div>
+                          )}
+                          {visible.has("imageUrl") && (
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted">Image</label>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    dispatch({ type: "SET_STEP", index, field: "imageUrl", value: "" });
+                                    hideStepField(index, "imageUrl");
+                                  }}
+                                  className="p-0.5 text-text-faint hover:text-foreground transition-colors"
+                                  title="Remove image field"
+                                >
+                                  <XIcon />
+                                </button>
+                              </div>
+                              <input
+                                type="text"
+                                value={step.imageUrl}
+                                onChange={(e) => dispatch({ type: "SET_STEP", index, field: "imageUrl", value: e.target.value })}
+                                className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                                placeholder="Image URL"
+                              />
+                            </div>
+                          )}
+                          {visible.has("script") && (
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted">Script</label>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    dispatch({ type: "SET_STEP", index, field: "script", value: "" });
+                                    hideStepField(index, "script");
+                                  }}
+                                  className="p-0.5 text-text-faint hover:text-foreground transition-colors"
+                                  title="Remove script field"
+                                >
+                                  <XIcon />
+                                </button>
+                              </div>
+                              <textarea
+                                value={step.script}
+                                onChange={(e) => dispatch({ type: "SET_STEP", index, field: "script", value: e.target.value })}
+                                rows={3}
+                                className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background font-mono resize-none"
+                                placeholder="Script / code block"
+                              />
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: "ADD_STEP" })}
+            className="mt-3 px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
+          >
+            + Add step
+          </button>
         </section>
 
         {/* ── Edge Cases ─────────────────────────────────────────── */}
-        <section className="border-t border-border-muted pt-7 pb-9">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="ty-section-label">Edge Cases</h3>
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "ADD_EDGE_CASE" })}
-              className="px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
-            >
-              + Add edge case
-            </button>
-          </div>
-          <div className="space-y-3">
-            {form.edgeCases.map((edge, index) => (
-              <div key={index} className="group border border-border-muted rounded-lg p-4">
-                <div className="flex items-start justify-between mb-1.5">
-                  <input
-                    type="text"
-                    value={edge.title}
-                    onChange={(e) => dispatch({ type: "SET_EDGE_CASE", index, field: "title", value: e.target.value })}
-                    className="flex-1 w-full text-sm font-medium text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
-                    placeholder="Edge case title"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => dispatch({ type: "REMOVE_EDGE_CASE", index })}
-                    className="ml-2 p-1 hover:bg-surface-2 rounded-lg text-text-faint hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-150"
-                    title="Remove edge case"
-                  >
-                    <XIcon />
-                  </button>
-                </div>
-                <textarea
-                  value={edge.description}
-                  onChange={(e) => dispatch({ type: "SET_EDGE_CASE", index, field: "description", value: e.target.value })}
-                  rows={2}
-                  className="w-full px-0 py-1 text-sm leading-relaxed text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none resize-none"
-                  placeholder="Describe how to handle this case…"
-                />
+        <section className={`pt-8 ${collapsedSections.has("edgeCases") ? "pb-4" : "pb-10"}`}>
+          <button
+            type="button"
+            onClick={() => toggleSection("edgeCases")}
+            className="flex w-full items-center justify-between py-2 mb-4 rounded-lg hover:shadow-sm cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Edge Cases</h3>
+            <ChevronDown
+              size={16}
+              strokeWidth={2}
+              className={`text-text-faint transition-transform duration-200 ${
+                collapsedSections.has("edgeCases") ? "" : "rotate-180"
+              }`}
+            />
+          </button>
+          {!collapsedSections.has("edgeCases") && (
+            <div>
+              <div className="space-y-3">
+                {form.edgeCases.map((edge, index) => (
+                  <div key={index} className="group border border-border-muted rounded-lg p-4">
+                    <div className="flex items-start justify-between border-b border-border-muted pb-2 mb-2">
+                      <input
+                        type="text"
+                        value={edge.title}
+                        onChange={(e) => dispatch({ type: "SET_EDGE_CASE", index, field: "title", value: e.target.value })}
+                        className="flex-1 w-full text-sm font-medium text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
+                        placeholder="Edge case title"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => dispatch({ type: "REMOVE_EDGE_CASE", index })}
+                        className="ml-2 p-1 hover:bg-surface-2 rounded-lg text-text-faint hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-150"
+                        title="Remove edge case"
+                      >
+                        <XIcon />
+                      </button>
+                    </div>
+                    <textarea
+                      value={edge.description}
+                      onChange={(e) => dispatch({ type: "SET_EDGE_CASE", index, field: "description", value: e.target.value })}
+                      rows={2}
+                      className="w-full px-0 py-1 text-sm leading-relaxed text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none resize-none"
+                      placeholder="Describe how to handle this case…"
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "ADD_EDGE_CASE" })}
+                className="mt-3 px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
+              >
+                + Add
+              </button>
+            </div>
+          )}
         </section>
 
         {/* ── Escalation ────────────────────────────────────────── */}
-        <section className="border-t border-border-muted pt-7 pb-9">
-          <h3 className="ty-section-label mb-1.5">Escalation</h3>
-          <p className="text-[11px] text-text-faint mb-5">Only include escalation when it requires a different owner or a safety/financial threshold.</p>
-          <div className="rounded-lg border border-border-muted p-5 space-y-4">
+        <section className={`pt-8 ${collapsedSections.has("escalation") ? "pb-4" : "pb-10"}`}>
+          <button
+            type="button"
+            onClick={() => toggleSection("escalation")}
+            className="flex w-full items-center justify-between py-2 mb-4 rounded-lg hover:shadow-sm cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Escalation</h3>
+            <ChevronDown
+              size={16}
+              strokeWidth={2}
+              className={`text-text-faint transition-transform duration-200 ${
+                collapsedSections.has("escalation") ? "" : "rotate-180"
+              }`}
+            />
+          </button>
+          {!collapsedSections.has("escalation") && (
             <div>
-              <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">When to escalate</label>
-              <textarea
-                value={form.escalationWhen}
-                onChange={(e) => dispatch({ type: "SET_FIELD", field: "escalationWhen", value: e.target.value })}
-                rows={2}
-                className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background resize-none"
-                placeholder="Describe escalation criteria"
-              />
+              <p className="text-[11px] text-text-faint mb-5">Only include escalation when it requires a different owner or a safety/financial threshold.</p>
+              <div className="rounded-lg border border-border-muted p-5 space-y-4">
+                <div>
+                  <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">When to escalate</label>
+                  <textarea
+                    value={form.escalationWhen}
+                    onChange={(e) => dispatch({ type: "SET_FIELD", field: "escalationWhen", value: e.target.value })}
+                    rows={2}
+                    className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background resize-none"
+                    placeholder="Describe escalation criteria"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">Who to contact</label>
+                  <input
+                    type="text"
+                    value={form.escalationWho}
+                    onChange={(e) => dispatch({ type: "SET_FIELD", field: "escalationWho", value: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                    placeholder="Name, role, or contact info"
+                  />
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">Who to contact</label>
-              <input
-                type="text"
-                value={form.escalationWho}
-                onChange={(e) => dispatch({ type: "SET_FIELD", field: "escalationWho", value: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
-                placeholder="Name, role, or contact info"
-              />
-            </div>
-          </div>
+          )}
         </section>
 
         {/* ── Contacts ──────────────────────────────────────────── */}
-        <section className="border-t border-border-muted pt-7 pb-9">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="ty-section-label">Contacts</h3>
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "ADD_CONTACT" })}
-              className="px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
-            >
-              + Add contact
-            </button>
-          </div>
-          <div className="space-y-3">
-            {form.contacts.map((contact, index) => (
-              <div key={index} className="group relative border border-border-muted rounded-lg p-4">
-                <button
-                  type="button"
-                  onClick={() => dispatch({ type: "REMOVE_CONTACT", index })}
-                  className="absolute top-3 right-3 p-1 hover:bg-surface-2 rounded-lg text-text-faint hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-150"
-                  title="Remove contact"
-                >
-                  <XIcon />
-                </button>
-                <div className="grid grid-cols-2 gap-3 pr-8">
-                  <input
-                    type="text"
-                    value={contact.name}
-                    onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "name", value: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
-                    placeholder="Name"
-                  />
-                  <input
-                    type="text"
-                    value={contact.role}
-                    onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "role", value: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
-                    placeholder="Role"
-                  />
-                </div>
-                <div className="mt-3">
-                  <input
-                    type="text"
-                    value={contact.department}
-                    onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "department", value: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
-                    placeholder="Department"
-                  />
-                </div>
-                <div className="mt-3">
-                  <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-1.5">When to contact</label>
-                  <textarea
-                    value={contact.description}
-                    onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "description", value: e.target.value })}
-                    rows={2}
-                    className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background resize-none"
-                    placeholder="Describe when to reach out to this person (optional)"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => toggleContactExpand(index)}
-                  className="flex items-center gap-1 text-[11px] font-medium text-text-muted hover:text-foreground transition-colors mt-3"
-                >
-                  <ChevronDown
-                    size={13}
-                    strokeWidth={2}
-                    className={`transition-transform duration-150 ${expandedContacts.has(index) ? "rotate-180" : ""}`}
-                  />
-                  {expandedContacts.has(index) ? "Hide advanced" : "Advanced"}
-                </button>
-                {expandedContacts.has(index) && (
-                  <div className="space-y-3 mt-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        value={contact.avatarUrl}
-                        onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "avatarUrl", value: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
-                        placeholder="Avatar URL"
-                      />
-                      <input
-                        type="text"
-                        value={contact.teamsUrl}
-                        onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "teamsUrl", value: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
-                        placeholder="Teams URL"
-                      />
-                    </div>
-                    <input
-                      type="text"
-                      value={contact.linkedinUrl}
-                      onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "linkedinUrl", value: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
-                      placeholder="LinkedIn URL"
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Reference Materials ────────────────────────────────── */}
-        <section className="border-t border-border-muted pt-7 pb-9">
-          <h3 className="ty-section-label mb-5">Reference Materials</h3>
-
-          {/* Dropzone */}
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={[
-              "border-2 border-dashed rounded-lg px-6 py-8 text-center cursor-pointer transition-colors duration-150",
-              isDragging
-                ? "border-accent bg-accent/5"
-                : "border-border-muted hover:border-border-strong hover:bg-surface-2/50",
-            ].join(" ")}
+        <section className={`pt-8 ${collapsedSections.has("contacts") ? "pb-4" : "pb-10"}`}>
+          <button
+            type="button"
+            onClick={() => toggleSection("contacts")}
+            className="flex w-full items-center justify-between py-2 mb-4 rounded-lg hover:shadow-sm cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <UploadCloud size={20} strokeWidth={1.5} className="mx-auto mb-2 text-text-faint" />
-            <p className="text-sm text-text-muted">
-              Drop files here or{" "}
-              <span className="font-medium text-foreground">Browse files</span>
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={handleFileSelect}
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Contacts</h3>
+            <ChevronDown
+              size={16}
+              strokeWidth={2}
+              className={`text-text-faint transition-transform duration-200 ${
+                collapsedSections.has("contacts") ? "" : "rotate-180"
+              }`}
             />
-          </div>
-
-          {/* File list */}
-          {form.referenceMaterials.some((r) => r.title.trim() || r.file) && (
-            <div className="space-y-2 mt-4">
-              {form.referenceMaterials.map((ref, index) =>
-                !ref.title.trim() && !ref.file ? null : (
-                  <div key={index} className="group relative flex items-start gap-3 border border-border-muted rounded-lg p-3">
-                    <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center">
-                      <FileText size={16} strokeWidth={1.5} className="text-text-faint" />
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={ref.title}
-                          onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "title", value: e.target.value })}
-                          className="flex-1 min-w-0 text-sm font-medium text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
-                          placeholder="Document title"
-                        />
-                        {ref.fileName && (
-                          <span className="flex-shrink-0 text-[11px] text-text-faint truncate max-w-[140px]">
-                            {ref.fileName}
-                          </span>
-                        )}
-                      </div>
-                      <input
-                        type="text"
-                        value={ref.caption}
-                        onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "caption", value: e.target.value })}
-                        className="w-full text-sm text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
-                        placeholder="Caption (optional)"
-                      />
-                    </div>
+          </button>
+          {!collapsedSections.has("contacts") && (
+            <div>
+              <div className="space-y-3">
+                {form.contacts.map((contact, index) => {
+                const visible = visibleContactFields.get(index) ?? new Set<string>();
+                const allDetailShown = CONTACT_DETAIL_OPTIONS.every((opt) => visible.has(opt.key));
+                return (
+                  <div key={index} className="group relative border border-border-muted rounded-lg p-4">
                     <button
                       type="button"
-                      onClick={() => dispatch({ type: "REMOVE_REFERENCE", index })}
+                      onClick={() => handleRemoveContact(index)}
                       className="absolute top-3 right-3 p-1 hover:bg-surface-2 rounded-lg text-text-faint hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-150"
-                      title="Remove reference"
+                      title="Remove contact"
                     >
                       <XIcon />
                     </button>
+                    <div className="grid grid-cols-2 gap-3 pr-8">
+                      <input
+                        type="text"
+                        value={contact.name}
+                        onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "name", value: e.target.value })}
+                        className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                        placeholder="Name"
+                      />
+                      <input
+                        type="text"
+                        value={contact.role}
+                        onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "role", value: e.target.value })}
+                        className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                        placeholder="Role"
+                      />
+                    </div>
+                    <div className="mt-3">
+                      <input
+                        type="text"
+                        value={contact.department}
+                        onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "department", value: e.target.value })}
+                        className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background"
+                        placeholder="Department"
+                      />
+                    </div>
+                    <div className="mt-3">
+                      <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-1.5">When to contact</label>
+                      <textarea
+                        value={contact.description}
+                        onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "description", value: e.target.value })}
+                        rows={2}
+                        className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm leading-relaxed text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background resize-none"
+                        placeholder="Describe when to reach out to this person (optional)"
+                      />
+                    </div>
+
+                    {/* Progressive detail fields */}
+                    {!allDetailShown && (
+                      <div className="relative mt-3">
+                        <button
+                          type="button"
+                          onClick={() => setOpenContactPopover(openContactPopover === index ? null : index)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-text-muted border border-border-muted rounded-full hover:bg-surface-2 hover:text-foreground transition-colors duration-150"
+                        >
+                          + Add detail
+                        </button>
+                        {openContactPopover === index && (
+                          <ContactDetailPopover
+                            contactIndex={index}
+                            visibleFields={visible}
+                            onSelect={showContactField}
+                            onClose={() => setOpenContactPopover(null)}
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {visible.has("teamsUrl") && (
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted">Teams</label>
+                          <button type="button" onClick={() => { dispatch({ type: "SET_CONTACT", index, field: "teamsUrl", value: "" }); hideContactField(index, "teamsUrl"); }} className="p-0.5 text-text-faint hover:text-foreground transition-colors" title="Remove field"><XIcon /></button>
+                        </div>
+                        <input type="text" value={contact.teamsUrl} onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "teamsUrl", value: e.target.value })} className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background" placeholder="Teams URL" />
+                      </div>
+                    )}
+                    {visible.has("email") && (
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted">Email</label>
+                          <button type="button" onClick={() => { dispatch({ type: "SET_CONTACT", index, field: "email", value: "" }); hideContactField(index, "email"); }} className="p-0.5 text-text-faint hover:text-foreground transition-colors" title="Remove field"><XIcon /></button>
+                        </div>
+                        <input type="text" value={contact.email} onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "email", value: e.target.value })} className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background" placeholder="Email address" />
+                      </div>
+                    )}
+                    {visible.has("phone") && (
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted">Phone</label>
+                          <button type="button" onClick={() => { dispatch({ type: "SET_CONTACT", index, field: "phone", value: "" }); hideContactField(index, "phone"); }} className="p-0.5 text-text-faint hover:text-foreground transition-colors" title="Remove field"><XIcon /></button>
+                        </div>
+                        <input type="text" value={contact.phone} onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "phone", value: e.target.value })} className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background" placeholder="Phone number" />
+                      </div>
+                    )}
+                    {visible.has("linkedinUrl") && (
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted">LinkedIn</label>
+                          <button type="button" onClick={() => { dispatch({ type: "SET_CONTACT", index, field: "linkedinUrl", value: "" }); hideContactField(index, "linkedinUrl"); }} className="p-0.5 text-text-faint hover:text-foreground transition-colors" title="Remove field"><XIcon /></button>
+                        </div>
+                        <input type="text" value={contact.linkedinUrl} onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "linkedinUrl", value: e.target.value })} className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background" placeholder="LinkedIn URL" />
+                      </div>
+                    )}
+                    {visible.has("avatarUrl") && (
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted">Avatar</label>
+                          <button type="button" onClick={() => { dispatch({ type: "SET_CONTACT", index, field: "avatarUrl", value: "" }); hideContactField(index, "avatarUrl"); }} className="p-0.5 text-text-faint hover:text-foreground transition-colors" title="Remove field"><XIcon /></button>
+                        </div>
+                        <input type="text" value={contact.avatarUrl} onChange={(e) => dispatch({ type: "SET_CONTACT", index, field: "avatarUrl", value: e.target.value })} className="w-full px-3.5 py-2 rounded-lg border border-border-muted text-sm text-foreground placeholder:text-text-faint focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent bg-background" placeholder="Avatar URL" />
+                      </div>
+                    )}
                   </div>
-                )
+                );
+              })}
+              </div>
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "ADD_CONTACT" })}
+                className="mt-3 px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-surface-2 hover:text-foreground rounded-lg transition-colors duration-150"
+              >
+                + Add
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* ── Reference Materials ────────────────────────────────── */}
+        <section className={`pt-8 ${collapsedSections.has("references") ? "pb-4" : "pb-10"}`}>
+          <button
+            type="button"
+            onClick={() => toggleSection("references")}
+            className="flex w-full items-center justify-between py-2 mb-4 rounded-lg hover:shadow-sm cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-secondary">Reference Materials</h3>
+            <ChevronDown
+              size={16}
+              strokeWidth={2}
+              className={`text-text-faint transition-transform duration-200 ${
+                collapsedSections.has("references") ? "" : "rotate-180"
+              }`}
+            />
+          </button>
+          {!collapsedSections.has("references") && (
+            <div className="mt-3">
+              {/* Dropzone */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={[
+                  "border-2 border-dashed rounded-lg px-6 py-8 text-center cursor-pointer transition-colors duration-150",
+                  isDragging
+                    ? "border-accent bg-accent/5"
+                    : "border-border-muted hover:border-border-strong hover:bg-surface-2/50",
+                ].join(" ")}
+              >
+                <UploadCloud size={20} strokeWidth={1.5} className="mx-auto mb-2 text-text-faint" />
+                <p className="text-sm text-text-muted">
+                  Drop files here or{" "}
+                  <span className="font-medium text-foreground">Browse files</span>
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+              </div>
+
+              {/* File list */}
+              {form.referenceMaterials.some((r) => r.title.trim() || r.file) && (
+                <div className="space-y-2 mt-4">
+                  {form.referenceMaterials.map((ref, index) =>
+                    !ref.title.trim() && !ref.file ? null : (
+                      <div key={index} className="group relative flex items-start gap-3 border border-border-muted rounded-lg p-3">
+                        <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center">
+                          <FileText size={16} strokeWidth={1.5} className="text-text-faint" />
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={ref.title}
+                              onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "title", value: e.target.value })}
+                              className="flex-1 min-w-0 text-sm font-medium text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
+                              placeholder="Document title"
+                            />
+                            {ref.fileName && (
+                              <span className="flex-shrink-0 text-[11px] text-text-faint truncate max-w-[140px]">
+                                {ref.fileName}
+                              </span>
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={ref.caption}
+                            onChange={(e) => dispatch({ type: "SET_REFERENCE", index, field: "caption", value: e.target.value })}
+                            className="w-full text-sm text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none"
+                            placeholder="Caption (optional)"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => dispatch({ type: "REMOVE_REFERENCE", index })}
+                          className="absolute top-3 right-3 p-1 hover:bg-surface-2 rounded-lg text-text-faint hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-150"
+                          title="Remove reference"
+                        >
+                          <XIcon />
+                        </button>
+                      </div>
+                    )
+                  )}
+                </div>
               )}
             </div>
           )}

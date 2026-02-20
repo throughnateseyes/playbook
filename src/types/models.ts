@@ -15,6 +15,8 @@ export interface Contact {
   role: string;
   department: string;
   description?: string;
+  email?: string;
+  phone?: string;
   avatarUrl?: string;
   teamsUrl?: string;
   linkedinUrl?: string;
