@@ -120,10 +120,11 @@ interface SidebarProps {
   pinnedIds: Set<string>;
   onTogglePin: (id: string) => void;
   onHomeClick?: () => void;
+  defaultCollapsed?: boolean;
 }
 
-const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, onClearSearch, pinnedIds, onTogglePin, onHomeClick }: SidebarProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, searchQuery, onClearSearch, pinnedIds, onTogglePin, onHomeClick, defaultCollapsed }: SidebarProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(!defaultCollapsed);
   // "all" = no category filter (show everything); "pinned" = pinned view; "category:X" = filtered
   const [activeView, setActiveView] = useState<string>("all");
   const [hasMounted, setHasMounted] = useState(false);

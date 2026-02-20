@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { SOP } from '../../types';
 import { normalizeSOPs } from '../../lib/normalize';
 import Sidebar from '../../components/Sidebar';
@@ -290,7 +291,9 @@ const AskAISection = React.memo(function AskAISection({ selectedSOP }: { selecte
   );
 });
 
-export default function Home() {
+function PlaybookContent() {
+  const searchParams = useSearchParams();
+  const sidebarCollapsed = searchParams.get("sidebar") === "collapsed";
   const { sops, createSOP, updateSOP } = useSOPRepository('parkmerced', normalizeSOPs(INITIAL_SOPS));
   const [selectedSOP, setSelectedSOP] = useState<SOP | null>(null);
   const [showAddPanel, setShowAddPanel] = useState(false);
@@ -444,6 +447,31 @@ export default function Home() {
     [sops]
   );
 
+  // ── Deep-link: auto-open SOP from landing page URL params ────────────────
+  const [deepLinkProcessed, setDeepLinkProcessed] = useState(false);
+  useEffect(() => {
+    if (deepLinkProcessed) return;
+    const sopId = searchParams.get("sop");
+    const q = searchParams.get("q");
+    if (!sopId) return;
+
+    const sop = sops.find((s) => s.id === sopId);
+    if (!sop) return;
+
+    setDeepLinkProcessed(true);
+
+    if (q) {
+      // Section match — same codepath as command palette onNavigateToSection
+      handleNavigateToSection(sopId, q);
+    } else {
+      // SOP select — same codepath as command palette onSelectSOP
+      setSelectedSOP(sop);
+    }
+
+    // Clean URL params without triggering navigation
+    window.history.replaceState({}, "", "/playbook");
+  }, [sops, searchParams, deepLinkProcessed, handleNavigateToSection]);
+
   // Stable CommandPalette callbacks — prevent new references on every Home render
   const handlePaletteClose = useCallback(() => {
     setCommandPaletteOpen(false);
@@ -513,6 +541,7 @@ export default function Home() {
         pinnedIds={pinnedIds}
         onTogglePin={togglePin}
         onHomeClick={() => { window.location.href = '/'; }}
+        defaultCollapsed={sidebarCollapsed}
       />
 
       <div className="flex-1 flex flex-col">
@@ -687,5 +716,13 @@ export default function Home() {
         </>
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense>
+      <PlaybookContent />
+    </Suspense>
   );
 }
