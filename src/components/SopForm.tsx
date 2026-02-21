@@ -976,8 +976,9 @@ export default function SopForm({
               }`}
             />
           </button>
-          <div className="h-px bg-border-muted mt-1" />
-          {!collapsedSections.has("edgeCases") && (
+          {collapsedSections.has("edgeCases") ? (
+            <div className="h-px bg-border-muted mt-1" />
+          ) : (
             <div className="animate-accordion-open mt-3">
               <div className="space-y-3">
                 {form.edgeCases.map((edge, index) => (
@@ -1018,6 +1019,7 @@ export default function SopForm({
                   + Add edge case
                 </button>
               </div>
+              <div className="h-px bg-border-muted mt-6" />
             </div>
           )}
         </section>
@@ -1039,8 +1041,9 @@ export default function SopForm({
               }`}
             />
           </button>
-          <div className="h-px bg-border-muted mt-1" />
-          {!collapsedSections.has("escalation") && (
+          {collapsedSections.has("escalation") ? (
+            <div className="h-px bg-border-muted mt-1" />
+          ) : (
             <div className="animate-accordion-open mt-3">
               <p className="text-[11px] text-text-faint mb-5">Only include escalation when it requires a different owner or a safety/financial threshold.</p>
               <div className="rounded-lg border border-border-muted p-5 space-y-4">
@@ -1065,6 +1068,7 @@ export default function SopForm({
                   />
                 </div>
               </div>
+              <div className="h-px bg-border-muted mt-6" />
             </div>
           )}
         </section>

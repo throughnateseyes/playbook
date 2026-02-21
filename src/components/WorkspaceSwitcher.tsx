@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check, Mail, Building2 } from "lucide-react";
+import { ChevronDown, Check, Mail, Building2, Settings } from "lucide-react";
 
 const WORKSPACES = [
   { id: "parkmerced", name: "Parkmerced" },
@@ -9,7 +9,7 @@ const WORKSPACES = [
   { id: "demo", name: "Demo Workspace" },
 ];
 
-export function WorkspaceSwitcher({ collapsed }: { collapsed?: boolean }) {
+export function WorkspaceSwitcher({ collapsed, onManageWorkspaces }: { collapsed?: boolean; onManageWorkspaces?: () => void }) {
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState("parkmerced");
   const ref = useRef<HTMLDivElement>(null);
@@ -82,6 +82,16 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed?: boolean }) {
               <Mail size={14} strokeWidth={1.75} className="text-text-faint" />
               <span>Invites</span>
             </button>
+            <button
+              onClick={() => { onManageWorkspaces?.(); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-text-secondary hover:bg-surface-2 transition-colors"
+            >
+              <Settings size={14} strokeWidth={1.75} className="text-text-faint flex-shrink-0" />
+              <div className="flex flex-col items-start">
+                <span>Manage workspaces</span>
+                <span className="text-[11px] text-text-faint leading-tight">Create, rename, members</span>
+              </div>
+            </button>
           </div>
         )}
       </div>
@@ -140,6 +150,16 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed?: boolean }) {
           >
             <Mail size={14} strokeWidth={1.75} className="text-text-faint" />
             <span>Invites</span>
+          </button>
+          <button
+            onClick={() => { onManageWorkspaces?.(); setOpen(false); }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-text-secondary hover:bg-surface-2 transition-colors"
+          >
+            <Settings size={14} strokeWidth={1.75} className="text-text-faint flex-shrink-0" />
+            <div className="flex flex-col items-start">
+              <span>Manage workspaces</span>
+              <span className="text-[11px] text-text-faint leading-tight">Create, rename, members</span>
+            </div>
           </button>
         </div>
       )}

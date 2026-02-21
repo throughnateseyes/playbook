@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, BookOpen, FileText, AlignLeft, AlertTriangle, GitBranch, Phone, ChevronRight } from "lucide-react";
+import { Search, FileText, AlignLeft, AlertTriangle, GitBranch, Phone, ChevronRight, Pin, Clock, Wrench, Headset, Receipt, KeyRound } from "lucide-react";
 import { UserMenu } from "../components/UserMenu";
+import { WorkspaceSwitcher } from "../components/WorkspaceSwitcher";
 import { normalizeSOPs } from '../lib/normalize';
 import { useDebouncedValue } from '../lib/hooks/useDebouncedValue';
 import { useSOPRepository } from '../lib/hooks/useSOPRepository';
@@ -124,20 +125,12 @@ function SectionIcon({ label }: { label: string }) {
 
 // ─── Page data ──────────────────────────────────────────────────────────────
 
-const PINNED_SOPS = [
-  { id: "1", title: "Emergency Maintenance Request", category: "Operations", updatedAt: "Updated 2 days ago" },
-  { id: "5", title: "Package Delivery Management", category: "Operations", updatedAt: "Updated 1 day ago" },
-  { id: "3", title: "Rent Payment Late Fee Application", category: "Finance", updatedAt: "Updated 3 days ago" },
-];
-
-const RECENT_SOPS = [
-  { id: "1", title: "Emergency Maintenance Request", category: "Operations", viewedAt: "Viewed 2h ago" },
-  { id: "4", title: "Noise Complaint Resolution", category: "Resident Support", viewedAt: "Viewed yesterday" },
-  { id: "2", title: "Resident Move-In Process", category: "Leasing", viewedAt: "Viewed 3 days ago" },
-  { id: "6", title: "Lease Renewal Outreach", category: "Leasing", viewedAt: "Viewed 1 week ago" },
-];
-
-const QUICK_CHIPS = ["Pinned", "Recent", "Escalations", "Parking", "Move-In"];
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>> = {
+  Operations: Wrench,
+  "Resident Support": Headset,
+  Finance: Receipt,
+  Leasing: KeyRound,
+};
 
 // ─── Home component ─────────────────────────────────────────────────────────
 
@@ -155,6 +148,22 @@ export default function Home() {
 
   const debouncedQuery = useDebouncedValue(query, 150);
   const searchIndex = useMemo(() => buildSearchIndex(sops), [sops]);
+
+  const categoryPills = useMemo(() => {
+    const seen = new Set<string>();
+    for (const sop of sops) {
+      if (!seen.has(sop.category)) seen.add(sop.category);
+    }
+    return [
+      { label: "Pinned", Icon: Pin },
+      { label: "Recent", Icon: Clock },
+      ...Array.from(seen).map((cat) => ({ label: cat, Icon: CATEGORY_ICONS[cat] ?? FileText })),
+    ];
+  }, [sops]);
+
+  // Placeholder: derive pinned/recent from sops until real pin/history state exists
+  const pinnedSops = useMemo(() => sops.slice(0, 3), [sops]);
+  const recentSops = useMemo(() => sops.slice(0, 4), [sops]);
 
   const results = useMemo((): SearchEntry[] => {
     const q = debouncedQuery.trim().toLowerCase();
@@ -263,15 +272,11 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* ── Top Nav ──────────────────────────────────────────────── */}
-      <nav className="flex items-center justify-end h-14 px-4 border-b border-border bg-background">
+      <nav className="flex items-center justify-between h-14 px-4 border-b border-border bg-background">
+        <div className="flex items-center">
+          <WorkspaceSwitcher />
+        </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push("/playbook")}
-            className="flex items-center gap-2 px-3 py-1.5 text-[13px] font-medium text-text-secondary rounded-lg hover:bg-surface-2 transition-colors duration-150"
-          >
-            <BookOpen size={16} strokeWidth={1.5} />
-            Playbook
-          </button>
           <UserMenu />
         </div>
       </nav>
@@ -280,24 +285,26 @@ export default function Home() {
       <main className="flex-1 overflow-y-auto">
         {/* ── Hero ───────────────────────────────────────────────── */}
         <div className="pt-24 pb-8 text-center px-6">
-          <p className="text-sm font-medium text-text-muted">Parkmerced Playbook</p>
-          <h1 className="mt-2 text-4xl md:text-5xl font-semibold tracking-tight text-foreground leading-tight">
-            Welcome back, <span className="font-serif">Nate</span>
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground leading-tight">
+            What do you need help with, <span className="font-serif font-semibold">Nate</span>?
           </h1>
         </div>
 
         {/* ── Inline Search ──────────────────────────────────────── */}
         <div className="flex justify-center px-6 mb-6">
+          {dropdownOpen && (
+            <div className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm" />
+          )}
           <div
             ref={wrapperRef}
             className={[
               "relative w-full transition-all duration-300 ease-out",
-              dropdownOpen ? "max-w-2xl" : "max-w-xl",
+              dropdownOpen ? "max-w-2xl z-50" : "max-w-xl",
             ].join(" ")}
           >
             {/* Input surface — in normal flow */}
             <div className={[
-              "border bg-background transition-all duration-300 ease-out focus-within:ring-2 focus-within:ring-ring",
+              "border bg-background transition-all duration-300 ease-out",
               dropdownOpen
                 ? "rounded-t-xl border-b-0 border-border shadow-lg"
                 : "rounded-xl border-border-muted shadow-sm",
@@ -311,7 +318,7 @@ export default function Home() {
                   onChange={(e) => { setQuery(e.target.value); setDropdownOpen(true); }}
                   onFocus={() => setDropdownOpen(true)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Search SOPs, tags, contacts, or keywords…"
+                  placeholder="Search the Parkmerced playbook for the right SOP."
                   className="flex-1 min-w-0 bg-transparent text-[15px] text-foreground placeholder:text-text-faint outline-none"
                   aria-autocomplete="list"
                   aria-controls="landing-search-results"
@@ -456,16 +463,16 @@ export default function Home() {
             )}
           </div>
         </div>
-
-        {/* ── Quick Chips ────────────────────────────────────────── */}
-        <div className="flex gap-2 flex-wrap justify-center px-6 mb-12">
-          {QUICK_CHIPS.map((chip) => (
+        {/* ── Category Pills ────────────────────────────────────── */}
+        <div className="flex gap-1.5 flex-wrap justify-center px-6 mb-12">
+          {categoryPills.map(({ label, Icon }) => (
             <button
-              key={chip}
+              key={label}
               type="button"
-              className="px-3.5 py-1.5 text-sm rounded-full border border-border-muted bg-surface text-text-secondary hover:bg-surface-2 hover:border-border-strong active:bg-surface-3 transition-all duration-150 cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-8 px-3 text-[13px] rounded-full border border-border-muted bg-surface text-text-secondary hover:bg-surface-2 hover:border-border-strong active:bg-surface-3 transition-all duration-150 cursor-pointer"
             >
-              {chip}
+              <Icon size={13} strokeWidth={1.75} className="text-text-faint flex-shrink-0" />
+              {label}
             </button>
           ))}
         </div>
@@ -480,7 +487,7 @@ export default function Home() {
                 Pinned
               </h2>
               <div className="space-y-3">
-                {PINNED_SOPS.map((sop) => (
+                {pinnedSops.map((sop) => (
                   <button
                     key={sop.id}
                     type="button"
@@ -493,7 +500,7 @@ export default function Home() {
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] text-text-muted">{sop.category}</span>
                       <span className="text-[11px] text-text-faint">·</span>
-                      <span className="text-[11px] text-text-faint">{sop.updatedAt}</span>
+                      <span className="text-[11px] text-text-faint">{sop.lastUpdated}</span>
                     </div>
                   </button>
                 ))}
@@ -506,7 +513,7 @@ export default function Home() {
                 Recent
               </h2>
               <div className="bg-surface border border-border-muted rounded-xl divide-y divide-border-muted">
-                {RECENT_SOPS.map((sop) => (
+                {recentSops.map((sop) => (
                   <button
                     key={sop.id}
                     type="button"
@@ -514,7 +521,7 @@ export default function Home() {
                     className="w-full text-left px-4 py-3 hover:bg-surface-2 first:rounded-t-xl last:rounded-b-xl transition-all duration-150 cursor-pointer"
                   >
                     <p className="text-[14px] font-medium text-foreground">{sop.title}</p>
-                    <p className="text-[12px] text-text-faint mt-0.5">{sop.viewedAt}</p>
+                    <p className="text-[12px] text-text-faint mt-0.5">{sop.lastUpdated}</p>
                   </button>
                 ))}
               </div>

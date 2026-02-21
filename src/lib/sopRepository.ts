@@ -70,10 +70,10 @@ export class LocalSOPRepository implements SOPRepository {
     this.writeAll(all);
   }
 
-  /** Write initial SOPs only if storage is empty. Returns current data either way. */
+  /** Write initial SOPs if storage is empty or data count changed (e.g. mock data updated). */
   seed(sops: SOP[]): SOP[] {
     const existing = this.readAll();
-    if (existing.length > 0) return existing;
+    if (existing.length > 0 && existing.length === sops.length) return existing;
     this.writeAll(sops);
     return sops;
   }
