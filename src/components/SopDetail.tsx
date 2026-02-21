@@ -78,20 +78,23 @@ const StepRow = React.memo(function StepRow({
   }, [hasContent]);
 
   return (
-    <div className="border-t border-border-muted first:border-0">
+    <div className="isolate">
       <button
         type="button"
         onClick={handleToggle}
         className={[
-          "w-full grid grid-cols-[28px_1fr_16px] gap-3 items-start py-5 text-left group",
+          "flex w-full items-center gap-3 px-4 py-4 rounded-lg text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           hasContent ? "cursor-pointer" : "cursor-default",
+          open
+            ? "bg-surface-2 hover:bg-surface-3"
+            : "bg-transparent hover:bg-surface-2",
         ].join(" ")}
         aria-expanded={hasContent ? open : undefined}
       >
-        <span className="text-right text-[12px] font-medium text-text-faint tabular-nums leading-none pt-[2px] select-none">
+        <span className="w-7 text-right text-[12px] font-medium text-text-faint tabular-nums leading-none select-none flex-shrink-0">
           {index + 1}
         </span>
-        <span className="ty-list-title">
+        <span className="ty-list-title flex-1 min-w-0">
           {highlightText(step.title ?? step.text)}
         </span>
         {hasContent ? (
@@ -99,18 +102,18 @@ const StepRow = React.memo(function StepRow({
             size={14}
             strokeWidth={2}
             className={[
-              "text-text-faint group-hover:text-text-muted transition-transform duration-200 ease-out mt-[2px]",
+              "flex-shrink-0 text-text-faint transition-transform duration-200 ease-out",
               open ? "rotate-180" : "",
             ].join(" ")}
           />
         ) : (
-          <span />
+          <span className="w-3.5 flex-shrink-0" />
         )}
       </button>
 
       {/* Expanded content — deferred mount, fully unmounted when collapsed */}
       {showContent && hasContent && (
-        <div className="pl-10 pr-2 pb-5 space-y-4">
+        <div className="pl-14 pr-4 pb-5 space-y-4">
           {step.text && (
             <p className="ty-secondary">
               {highlightText(step.text)}
@@ -126,6 +129,9 @@ const StepRow = React.memo(function StepRow({
           )}
         </div>
       )}
+
+      <div className="h-2.5" />
+      <div className="h-px bg-border-muted" />
     </div>
   );
 });

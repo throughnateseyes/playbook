@@ -377,7 +377,7 @@ export default function Home() {
                                 key={entry.id}
                                 id={`ls-result-${entry.id}`}
                                 role="option"
-                                aria-selected={isSelected}
+                                aria-selected={isSelected} 
                                 data-selected={isSelected}
                                 className={[
                                   "flex items-center gap-3 mx-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors duration-100 select-none",
