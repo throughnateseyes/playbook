@@ -1090,8 +1090,9 @@ export default function SopForm({
               }`}
             />
           </button>
-          <div className="h-px bg-border-muted mt-1" />
-          {!collapsedSections.has("contacts") && (
+          {collapsedSections.has("contacts") ? (
+            <div className="h-px bg-border-muted mt-1" />
+          ) : (
             <div className="animate-accordion-open mt-3">
               <div className="space-y-3">
                 {form.contacts.map((contact, index) => {
@@ -1222,6 +1223,7 @@ export default function SopForm({
                   + Add contact
                 </button>
               </div>
+              <div className="h-px bg-border-muted mt-6" />
             </div>
           )}
         </section>
