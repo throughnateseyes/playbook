@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { ChevronDown, Check, Mail, Building2, Settings } from "lucide-react";
+import { useDismiss } from "../lib/hooks/useDismiss";
 
 const WORKSPACES = [
   { id: "parkmerced", name: "Parkmerced" },
@@ -16,25 +17,8 @@ export function WorkspaceSwitcher({ collapsed, onManageWorkspaces }: { collapsed
 
   const active = WORKSPACES.find((w) => w.id === activeId)!;
 
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
-
-  // Close on Escape
-  useEffect(() => {
-    if (!open) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [open]);
+  const dismiss = useCallback(() => setOpen(false), []);
+  useDismiss(ref, dismiss, open);
 
   // Collapsed mode — icon only with tooltip
   if (collapsed) {

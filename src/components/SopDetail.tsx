@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useMemo, startTransition } from "react";
+import React, { useState, useCallback, useEffect, startTransition } from "react";
 import { ChevronDown, Star, Copy, Check, FileText, AlertTriangle, User, ExternalLink, Download } from "lucide-react";
 import type { SOP, Step, EdgeCase } from "../types";
 
@@ -79,41 +79,44 @@ const StepRow = React.memo(function StepRow({
 
   return (
     <div className="isolate">
-      <button
-        type="button"
-        onClick={handleToggle}
-        className={[
-          "flex w-full items-center gap-3 px-4 py-4 rounded-lg text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          hasContent ? "cursor-pointer" : "cursor-default",
-          open
-            ? "bg-surface-2 hover:bg-surface-3"
-            : "bg-transparent hover:bg-surface-2",
-        ].join(" ")}
-        aria-expanded={hasContent ? open : undefined}
+      {/* RowWrapper — carries background */}
+      <div
+        className="rounded-lg transition-colors duration-150 bg-transparent hover:bg-surface-2 mt-1.5"
       >
-        <span className="w-7 text-right text-[12px] font-medium text-text-faint tabular-nums leading-none select-none flex-shrink-0">
-          {index + 1}
-        </span>
-        <span className="ty-list-title flex-1 min-w-0">
-          {highlightText(step.title ?? step.text)}
-        </span>
-        {hasContent ? (
-          <ChevronDown
-            size={14}
-            strokeWidth={2}
-            className={[
-              "flex-shrink-0 text-text-faint transition-transform duration-200 ease-out",
-              open ? "rotate-180" : "",
-            ].join(" ")}
-          />
-        ) : (
-          <span className="w-3.5 flex-shrink-0" />
-        )}
-      </button>
+        {/* RowContent — carries padding */}
+        <button
+          type="button"
+          onClick={handleToggle}
+          className={[
+            "flex w-full items-center gap-3 px-5 py-4 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            hasContent ? "cursor-pointer" : "cursor-default",
+          ].join(" ")}
+          aria-expanded={hasContent ? open : undefined}
+        >
+          <span className="w-5 text-left text-[12px] font-medium text-text-faint tabular-nums leading-none select-none flex-shrink-0">
+            {index + 1}
+          </span>
+          <span className="ty-list-title flex-1 min-w-0">
+            {highlightText(step.title ?? step.text)}
+          </span>
+          {hasContent ? (
+            <ChevronDown
+              size={14}
+              strokeWidth={2}
+              className={[
+                "flex-shrink-0 text-text-faint transition-transform duration-200 ease-out",
+                open ? "rotate-180" : "",
+              ].join(" ")}
+            />
+          ) : (
+            <span className="w-3.5 flex-shrink-0" />
+          )}
+        </button>
+      </div>
 
       {/* Expanded content — deferred mount, fully unmounted when collapsed */}
       {showContent && hasContent && (
-        <div className="pl-14 pr-4 pb-5 space-y-4">
+        <div className="pl-[52px] pr-5 pt-2 pb-2 space-y-4">
           {step.text && (
             <p className="ty-secondary">
               {highlightText(step.text)}
@@ -130,7 +133,7 @@ const StepRow = React.memo(function StepRow({
         </div>
       )}
 
-      <div className="h-2.5" />
+      <div className="h-1.5" />
       <div className="h-px bg-border-muted" />
     </div>
   );

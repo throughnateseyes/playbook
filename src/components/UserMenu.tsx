@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useTheme } from "next-themes";
 import { User, Settings, LogOut, Sun, Moon } from "lucide-react";
+import { useDismiss } from "../lib/hooks/useDismiss";
 
 export function UserMenu() {
   const [open, setOpen] = useState(false);
@@ -13,25 +14,8 @@ export function UserMenu() {
 
   useEffect(() => setMounted(true), []);
 
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
-
-  // Close on Escape
-  useEffect(() => {
-    if (!open) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [open]);
+  const dismiss = useCallback(() => setOpen(false), []);
+  useDismiss(ref, dismiss, open);
 
   return (
     <div ref={ref} className="relative">
