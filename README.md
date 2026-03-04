@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Playbook
 
-## Getting Started
+Playbook is a workflow documentation tool designed to help teams create, store, and follow Standard Operating Procedures (SOPs).
 
-First, run the development server:
+It focuses on turning scattered internal knowledge into clear, structured workflows that teams can quickly reference when handling operational tasks.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+This project was inspired by real operational workflows in property management, where teams frequently rely on fragmented documentation across multiple tools.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Playbook aims to centralize that knowledge into one system.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+⸻
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Core Features
 
-## Learn More
+Structured SOP Builder
+Create procedures using a consistent framework including overview, steps, edge cases, escalation paths, contacts, and attachments.
 
-To learn more about Next.js, take a look at the following resources:
+Step-Based Workflows
+Break processes into clear, actionable steps instead of long documents.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Centralized Knowledge
+All procedures live in one place so teams can quickly find what they need.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+⸻
 
-## Deploy on Vercel
+Tech Stack
+	•	Next.js
+	•	React
+	•	TypeScript
+	•	Tailwind CSS
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+⸻
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Nate
+Product Designer
+
+Portfolio:
+throughnateseyes.com
