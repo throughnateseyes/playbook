@@ -13,7 +13,7 @@ export interface CommandPaletteProps {
   sops: SOP[];
   onSelectSOP: (sop: SOP) => void;
   onNavigateToSection: (sopId: string, query: string) => void;
-1}
+}
 
 // ─── CommandPalette ───────────────────────────────────────────────────────────
 

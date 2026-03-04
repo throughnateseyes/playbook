@@ -174,8 +174,8 @@ export default function Home() {
       <main className="flex-1 overflow-y-auto">
         {/* ── Hero ───────────────────────────────────────────────── */}
         <div className="pt-24 pb-8 text-center px-6">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground leading-tight">
-            What do you need help with, <span className="font-serif font-semibold">Nate</span>?
+          <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-text-secondary leading-tight">
+            What do you need help with, <span className="font-serif italic text-foreground">Nate</span>?
           </h1>
         </div>
 

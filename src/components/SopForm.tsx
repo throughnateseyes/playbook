@@ -665,6 +665,9 @@ export default function SopForm({
         <section className="pt-8 pb-4">
           <div className="space-y-7">
             <div>
+              <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-2">
+                SOP Title <span className="normal-case tracking-normal text-text-faint">*</span>
+              </label>
               <input
                 type="text"
                 value={form.title}
@@ -676,12 +679,8 @@ export default function SopForm({
                 className="w-full text-2xl font-semibold tracking-tight text-foreground placeholder:text-text-faint bg-transparent border-none outline-none focus:outline-none py-1"
                 placeholder="Choose SOP name"
               />
-              {errors.title ? (
+              {errors.title && (
                 <p className="text-xs text-red-500 mt-1.5" data-error>{errors.title}</p>
-              ) : (
-                <p className={`text-[11px] text-text-faint mt-1.5 transition-opacity duration-150 ${form.title.trim() ? "opacity-0" : "opacity-100"}`}>
-                  SOP name required
-                </p>
               )}
             </div>
 
@@ -836,7 +835,7 @@ export default function SopForm({
                               <button
                                 type="button"
                                 onClick={() => setOpenStepPopover(openStepPopover === index ? null : index)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-text-muted border border-border-muted rounded-full hover:bg-surface-2 hover:text-foreground transition-colors duration-150"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-text-muted bg-surface-2 border border-transparent rounded-full hover:bg-surface-3 hover:text-foreground hover:border-border-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all duration-150"
                               >
                                 + Add attachment
                               </button>
@@ -952,7 +951,7 @@ export default function SopForm({
             <button
               type="button"
               onClick={() => dispatch({ type: "ADD_STEP" })}
-              className="px-3 py-1.5 text-xs font-medium text-text-secondary border border-border-muted rounded-lg hover:bg-surface-2 hover:text-foreground hover:border-border-strong hover:shadow-sm active:bg-surface-3 transition-all duration-150"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-text-secondary bg-surface-2 border border-transparent rounded-lg hover:bg-surface-3 hover:border-border-muted hover:shadow-sm active:bg-surface-3 active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all duration-150"
             >
               + Add step
             </button>
@@ -1014,7 +1013,7 @@ export default function SopForm({
                 <button
                   type="button"
                   onClick={() => dispatch({ type: "ADD_EDGE_CASE" })}
-                  className="px-3 py-1.5 text-xs font-medium text-text-secondary border border-border-muted rounded-lg hover:bg-surface-2 hover:text-foreground hover:border-border-strong hover:shadow-sm active:bg-surface-3 transition-all duration-150"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-text-secondary bg-surface-2 border border-transparent rounded-lg hover:bg-surface-3 hover:border-border-muted hover:shadow-sm active:bg-surface-3 active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all duration-150"
                 >
                   + Add edge case
                 </button>
@@ -1150,7 +1149,7 @@ export default function SopForm({
                         <button
                           type="button"
                           onClick={() => setOpenContactPopover(openContactPopover === index ? null : index)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-text-muted border border-border-muted rounded-full hover:bg-surface-2 hover:text-foreground transition-colors duration-150"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-text-muted bg-surface-2 border border-transparent rounded-full hover:bg-surface-3 hover:text-foreground hover:border-border-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all duration-150"
                         >
                           + Add detail
                         </button>
@@ -1218,7 +1217,7 @@ export default function SopForm({
                 <button
                   type="button"
                   onClick={() => dispatch({ type: "ADD_CONTACT" })}
-                  className="px-3 py-1.5 text-xs font-medium text-text-secondary border border-border-muted rounded-lg hover:bg-surface-2 hover:text-foreground hover:border-border-strong hover:shadow-sm active:bg-surface-3 transition-all duration-150"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-text-secondary bg-surface-2 border border-transparent rounded-lg hover:bg-surface-3 hover:border-border-muted hover:shadow-sm active:bg-surface-3 active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all duration-150"
                 >
                   + Add contact
                 </button>
@@ -1240,7 +1239,7 @@ export default function SopForm({
                 setShowRefDropzone(true);
                 fileInputRef.current?.click();
               }}
-              className="px-3 py-1.5 text-xs font-medium text-text-secondary border border-border-muted rounded-lg hover:bg-surface-2 hover:text-foreground hover:border-border-strong hover:shadow-sm active:bg-surface-3 transition-all duration-150"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-text-secondary bg-surface-2 border border-transparent rounded-lg hover:bg-surface-3 hover:border-border-muted hover:shadow-sm active:bg-surface-3 active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all duration-150"
             >
               + Add material
             </button>
@@ -1324,8 +1323,7 @@ export default function SopForm({
       </div>
 
       {/* Footer */}
-      <div className="flex-shrink-0 flex items-center justify-between px-8 py-4 border-t border-border bg-background">
-        <p className="text-xs text-text-faint">Title and category are required</p>
+      <div className="flex-shrink-0 flex items-center justify-end px-8 py-4 border-t border-border bg-background">
         <div className="flex items-center gap-3">
           <button
             type="button"

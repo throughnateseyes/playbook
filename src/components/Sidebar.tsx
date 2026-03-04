@@ -159,6 +159,12 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
     return counts;
   }, [sops]);
 
+  // Pinned count — only SOPs that actually exist in the dataset
+  const pinnedCount = useMemo(
+    () => sops.filter((s) => pinnedIds.has(s.id)).length,
+    [sops, pinnedIds],
+  );
+
   const viewSOPs = useMemo(() => {
     if (activeView === "home") return [];
     let base: SOP[];
@@ -166,14 +172,26 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
     else if (activeView.startsWith("category:")) base = sops.filter((s) => `category:${s.category}` === activeView);
     else base = sops; // "all" — no filter
 
-    if (!searchQuery.trim()) return base;
-    const q = searchQuery.toLowerCase();
-    return base.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) ||
-        s.tags.some((t) => t.toLowerCase().includes(q)) ||
-        s.overview.toLowerCase().includes(q)
-    );
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      base = base.filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.tags.some((t) => t.toLowerCase().includes(q)) ||
+          s.overview.toLowerCase().includes(q)
+      );
+    }
+
+    // Pinned items sort to top (skip for "pinned" view — all are pinned)
+    if (activeView !== "pinned") {
+      base = [...base].sort((a, b) => {
+        const ap = pinnedIds.has(a.id) ? 0 : 1;
+        const bp = pinnedIds.has(b.id) ? 0 : 1;
+        return ap - bp;
+      });
+    }
+
+    return base;
   }, [sops, activeView, pinnedIds, searchQuery]);
 
   // ── Expanded sidebar ───────────────────────────────────────────────────────
@@ -203,7 +221,7 @@ const Sidebar = React.memo(function Sidebar({ sops, selectedSOP, onSelectSOP, se
           <nav className="px-3 pt-1 pb-1">
             {VIEW_ITEMS.map(({ id, label, icon: Icon }) => {
               const isActive = activeView === id;
-              const count = id === "pinned" && hasMounted && pinnedIds.size > 0 ? pinnedIds.size : undefined;
+              const count = id === "pinned" && hasMounted && pinnedCount > 0 ? pinnedCount : undefined;
               return (
                 <button
                   key={id}

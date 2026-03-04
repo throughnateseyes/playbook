@@ -66,6 +66,7 @@
   --color-highlight-text:     var(--highlight-text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-lora);
 }
 
 /* Enable class-based dark: variant (next-themes adds class="dark" on <html>) */
@@ -107,6 +108,18 @@ body {
 }
 .animate-fade-in {
   animation: fade-in 250ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes hero-name {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-hero-name {
+  animation: hero-name 160ms cubic-bezier(0.22, 1, 0.36, 1) 100ms both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-name {
+    animation: none;
+  }
 }
 
 @layer utilities {
